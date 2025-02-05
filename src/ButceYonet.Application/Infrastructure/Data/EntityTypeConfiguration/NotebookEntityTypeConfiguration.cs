@@ -25,6 +25,18 @@ public class NotebookEntityTypeConfiguration : EFCoreEntityTypeConfiguration<Not
             .WithOne(p => p.Notebook)
             .HasForeignKey(p => p.NotebookId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder
+            .HasMany<NotebookLabel>(p => p.NotebookLabels)
+            .WithOne(p => p.Notebook)
+            .HasForeignKey(p => p.NotebookId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder
+            .HasMany<Transaction>(p => p.Transactions)
+            .WithOne(p => p.Notebook)
+            .HasForeignKey(p => p.NotebookId)
+            .OnDelete(DeleteBehavior.NoAction);
         
         builder.ToTable("Notebooks");
     }

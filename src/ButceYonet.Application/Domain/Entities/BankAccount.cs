@@ -8,4 +8,10 @@ public class BankAccount : BaseEntity
     public string Description { get; set; }
     
     public virtual Bank Bank { get; set; }
+    public virtual ICollection<Transaction> Transactions { get; set; }
+
+    public BankAccount()
+    {
+        Transactions = new List<Transaction>();
+    }
 }

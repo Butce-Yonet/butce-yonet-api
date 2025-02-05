@@ -10,4 +10,9 @@ public class Bank : BaseEntity
     public string TypeName { get; set; }
 
     public virtual ICollection<BankAccount> BankAccounts { get; set; }
+
+    public Bank()
+    {
+        BankAccounts = new List<BankAccount>();
+    }
 }
