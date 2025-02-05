@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DotBoil" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Caching" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Cors" Version="1.0.1" />
+      <PackageReference Include="DotBoil.EFCore" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Email" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Localization" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Logging" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Mapper" Version="1.0.1" />
+      <PackageReference Include="DotBoil.MassTransit" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Parameter" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Swagger" Version="1.0.1" />
+      <PackageReference Include="DotBoil.TemplateEngine" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Validator" Version="1.0.1" />
+      <PackageReference Include="DotBoil.Versioning" Version="1.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Application\Features\" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,31 @@
+using ButceYonet.Application.Domain.Entities;
+using DotBoil.EFCore;
+using DotBoil.EFCore.Attributes;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace ButceYonet.Application.Infrastructure.Data.EntityTypeConfiguration;
+
+[DotBoilEntityTypeConfiguration(typeof(ButceYonetDbContext))]
+public class NotebookEntityTypeConfiguration : EFCoreEntityTypeConfiguration<Notebook>
+{
+    public override void ConfigureDotBoilEntity(EntityTypeBuilder<Notebook> builder)
+    {
+        builder
+            .Property(p => p.Name)
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder
+            .Property(p => p.IsDefault)
+            .IsRequired();
+
+        builder
+            .HasMany<NotebookUser>(p => p.NotebookUsers)
+            .WithOne(p => p.Notebook)
+            .HasForeignKey(p => p.NotebookId)
+            .OnDelete(DeleteBehavior.NoAction);
+        
+        builder.ToTable("Notebooks");
+    }
+}
