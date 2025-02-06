@@ -5,7 +5,7 @@ namespace ButceYonet.Application.Domain.Entities;
 
 public class Transaction : BaseEntity
 {
-    public int NotebookId { get; set; }
+    public int? NotebookId { get; set; }
     public int? BankAccountId { get; set; }
     public string ExternalId { get; set; }
     public string Name { get; set; }
