@@ -19,6 +19,7 @@ public class ButceYonetDbContext : EFCoreDbContext
     public DbSet<Plan> Plans { get; set; }
     public DbSet<PlanFeature> PlanFeatures { get; set; }
     public DbSet<UserPlan> UserPlans { get; set; }
+    public DbSet<DefaultLabel> DefaultLabels { get; set; }
     
     public ButceYonetDbContext(IServiceProvider serviceProvider) : base(serviceProvider)
     {
