@@ -16,6 +16,9 @@ public class ButceYonetDbContext : EFCoreDbContext
     public DbSet<Currency> Currencies { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<TransactionLabel> TransactionLabels { get; set; }
+    public DbSet<Plan> Plans { get; set; }
+    public DbSet<PlanFeature> PlanFeatures { get; set; }
+    public DbSet<UserPlan> UserPlans { get; set; }
     
     public ButceYonetDbContext(IServiceProvider serviceProvider) : base(serviceProvider)
     {
