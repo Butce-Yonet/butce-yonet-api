@@ -16,6 +16,11 @@ public class PlanFeatureEntityTypeConfiguration : EFCoreEntityTypeConfiguration<
             .IsRequired();
 
         builder
+            .Property(p => p.Code)
+            .HasMaxLength(64)
+            .IsRequired();
+
+        builder
             .Property(p => p.Feature)
             .IsRequired();
 

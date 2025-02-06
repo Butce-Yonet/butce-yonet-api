@@ -1,4 +1,6 @@
+using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Infrastructure;
+using ButceYonet.Application.Infrastructure.Services;
 using DotBoil;
 using DotBoil.Dependency;
 using DotBoil.EFCore;
@@ -13,6 +15,8 @@ public class ButceYonetModule : Module
     {
         DotBoilApp.Services.AddScoped<IAuditUser, CurrentUser>();
         DotBoilApp.Services.AddScoped<ICurrentLanguage, CurrentLanguage>();
+        DotBoilApp.Services.AddScoped<IUserPlanValidator, UserPlanValidator>();
+        DotBoilApp.Services.AddScoped<IUser, User>();
         return Task.CompletedTask;
     }
 
