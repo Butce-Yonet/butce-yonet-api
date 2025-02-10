@@ -25,7 +25,6 @@
 
     <ItemGroup>
       <Folder Include="Application\Features\NotebookLabels\" />
-      <Folder Include="Application\Features\Notebooks\" />
       <Folder Include="Application\Features\NotebookUsers\" />
     </ItemGroup>
 

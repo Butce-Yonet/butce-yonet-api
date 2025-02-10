@@ -7,7 +7,7 @@ using MediatR;
 
 namespace ButceYonet.Application.Application.Features;
 
-public abstract class BaseQueryHandler<TRequest, TResponse> : IRequestHandler<TRequest, TResponse>
+public abstract class BaseHandler<TRequest, TResponse> : IRequestHandler<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
     protected readonly ICache _cache;
@@ -17,7 +17,7 @@ public abstract class BaseQueryHandler<TRequest, TResponse> : IRequestHandler<TR
     protected readonly IParameterManager _parameter;
     protected readonly IUserPlanValidator _userPlanValidator;
 
-    public BaseQueryHandler(
+    public BaseHandler(
         ICache cache, 
         IUser user, 
         IMapper mapper,

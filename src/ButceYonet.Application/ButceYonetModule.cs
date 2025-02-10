@@ -1,3 +1,4 @@
+using ButceYonet.Application.Application;
 using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Application.Shared.UserPlanRuleValidators;
 using ButceYonet.Application.Domain.Enums;
@@ -7,6 +8,7 @@ using DotBoil;
 using DotBoil.Dependency;
 using DotBoil.EFCore;
 using DotBoil.Localization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ButceYonet.Application;
@@ -44,6 +46,7 @@ public class ButceYonetModule : Module
 
     public override Task UseModule()
     {
+        ((WebApplication)DotBoilApp.Host).UseMiddleware<ApiExceptionHandlingMiddleware>();
         return Task.CompletedTask;
     }
 }

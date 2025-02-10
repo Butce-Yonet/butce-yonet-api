@@ -1,6 +1,7 @@
 using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Enums;
+using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
 using DotBoil.Caching;
 using DotBoil.EFCore;
@@ -33,6 +34,6 @@ public class NotebookUserCountRuleValidator : IUserPlanRuleValidator
         if (planFeature.Count > notebookUserCount)
             return true;
         
-        return false;
+        throw new UserPlanValidationException();
     }
 }

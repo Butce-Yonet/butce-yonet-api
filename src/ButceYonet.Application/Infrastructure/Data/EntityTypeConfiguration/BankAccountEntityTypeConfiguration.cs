@@ -16,6 +16,10 @@ public class BankAccountEntityTypeConfiguration : EFCoreEntityTypeConfiguration<
             .IsRequired();
 
         builder
+            .Property(p => p.UserId)
+            .IsRequired();
+
+        builder
             .Property(p => p.Description)
             .HasMaxLength(128)
             .IsRequired();

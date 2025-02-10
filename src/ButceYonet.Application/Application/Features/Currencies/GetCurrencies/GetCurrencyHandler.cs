@@ -15,11 +15,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Application.Application.Features.Currencies.GetCurrencies;
 
-public class GetCurrencyQueryHandler : BaseQueryHandler<GetCurrencyQuery, BaseResponse>
+public class GetCurrencyHandler : BaseHandler<GetCurrencyQuery, BaseResponse>
 {
     private readonly IRepository<Currency, ButceYonetDbContext> _currencyRepository;
     
-    public GetCurrencyQueryHandler(
+    public GetCurrencyHandler(
         ICache cache,
         IUser user,
         IMapper mapper,

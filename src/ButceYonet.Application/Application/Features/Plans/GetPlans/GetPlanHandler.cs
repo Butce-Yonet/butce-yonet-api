@@ -15,11 +15,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Application.Application.Features.Plans.GetPlans;
 
-public class GetPlanQueryHandler : BaseQueryHandler<GetPlanQuery, BaseResponse>
+public class GetPlanHandler : BaseHandler<GetPlanQuery, BaseResponse>
 {
     private readonly IRepository<Plan, ButceYonetDbContext> _planRepository;
     
-    public GetPlanQueryHandler(
+    public GetPlanHandler(
         ICache cache,
         IUser user,
         IMapper mapper,
