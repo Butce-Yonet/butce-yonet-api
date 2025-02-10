@@ -1,4 +1,6 @@
 using ButceYonet.Application.Application.Interfaces;
+using ButceYonet.Application.Application.Shared.UserPlanRuleValidators;
+using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Infrastructure;
 using ButceYonet.Application.Infrastructure.Services;
 using DotBoil;
@@ -17,6 +19,26 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<ICurrentLanguage, CurrentLanguage>();
         DotBoilApp.Services.AddScoped<IUserPlanValidator, UserPlanValidator>();
         DotBoilApp.Services.AddScoped<IUser, User>();
+
+        #region User Plan Rule Validators
+
+        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookCountRuleValidator>(PlanFeatures.NotebookCount
+            .ToString());
+        
+        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookUserCountRuleValidator>(PlanFeatures.NotebookUserCount
+            .ToString());
+        
+        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookLabelCountRuleValidator>(PlanFeatures.NotebookLabelCount
+            .ToString());
+        
+        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookTransactionCount>(PlanFeatures.NotebookTransactionCount
+            .ToString());
+        
+        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, BankAccountCountRuleValidator>(PlanFeatures.BankAccountCount
+            .ToString());
+
+        #endregion
+        
         return Task.CompletedTask;
     }
 

@@ -20,6 +20,10 @@ public class NotebookUserEntityTypeConfiguration : EFCoreEntityTypeConfiguration
             .IsRequired();
 
         builder
+            .Property(p => p.IsDefault)
+            .IsRequired();
+
+        builder
             .HasOne<Notebook>(p => p.Notebook)
             .WithMany(p => p.NotebookUsers)
             .HasForeignKey(p => p.NotebookId)

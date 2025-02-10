@@ -1,4 +1,5 @@
 using ButceYonet.Application.Application.Interfaces;
+using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Infrastructure.Data;
@@ -31,8 +32,10 @@ public class UserPlanValidator : IUserPlanValidator
     public async Task<bool> Validate(PlanFeatures feature, IDictionary<string, string> parameters)
     {
         var userId = _user.Id;
-
-        var userPlanFeatures = await _cache.GetOrSetAsync($"User:{userId}:PlanFeatures", async () =>
+        
+        var cacheKey = CacheKeyConstants.CurrentUserPlan.Replace("{UserId}", userId.ToString());
+        
+        var userPlanFeatures = await _cache.GetOrSetAsync(cacheKey, async () =>
         {
             var userPlan = await _userPlanRepository
                 .Get()
@@ -49,7 +52,7 @@ public class UserPlanValidator : IUserPlanValidator
                 return Enumerable.Empty<PlanFeature>();
 
             return userPlan.Plan.PlanFeatures;
-        }, TimeSpan.FromDays(1));
+        }, CacheIntervalConstants.CurrentUserPlan);
 
         var planFeature = userPlanFeatures.FirstOrDefault(upf => upf.Feature == feature);
 

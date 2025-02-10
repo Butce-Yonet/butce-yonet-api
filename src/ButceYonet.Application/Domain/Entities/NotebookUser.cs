@@ -6,6 +6,7 @@ public class NotebookUser : BaseEntity
 {
     public int UserId { get; set; }
     public int NotebookId { get; set; }
+    public bool IsDefault { get; set; }
     
     public virtual Notebook Notebook { get; set; }
 }

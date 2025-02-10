@@ -7,4 +7,5 @@ public class ButceYonetConfiguration : IOptions
     public string Key => "ButceYonet";
 
     public string MainConnectionString { get; set; }
+    public string AuthorizationConnectionString { get; set; }
 }
