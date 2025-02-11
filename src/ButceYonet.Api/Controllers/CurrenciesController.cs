@@ -27,7 +27,6 @@ namespace ButceYonet.Api.Controllers
         [ProducesResponseType(typeof(BaseResponse<IEnumerable<CurrencyDto>>), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get([FromQuery] GetCurrencyQuery request)
         {
-            _logger.LogInformation("test");
             var response = await _mediator.Send(request);
 
             return Response(response);

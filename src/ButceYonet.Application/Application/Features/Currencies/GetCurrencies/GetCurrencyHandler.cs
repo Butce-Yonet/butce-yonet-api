@@ -36,13 +36,13 @@ public class GetCurrencyHandler : BaseHandler<GetCurrencyQuery, BaseResponse>
     {
         var currencies = await _cache.GetOrSetAsync(CacheKeyConstants.Currencies, async () =>
         {
-            return await _currencyRepository
+            var items = await _currencyRepository
                 .GetAll()
                 .ToListAsync();
+            
+            return _mapper.Map<List<CurrencyDto>>(items);
         }, CacheIntervalConstants.Currencies);
 
-        var responseModel = _mapper.Map<List<CurrencyDto>>(currencies);
-
-        return BaseResponse.Response(responseModel, HttpStatusCode.OK);
+        return BaseResponse.Response(currencies, HttpStatusCode.OK);
     }
 }

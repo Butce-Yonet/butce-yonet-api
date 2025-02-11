@@ -36,14 +36,14 @@ public class GetPlanHandler : BaseHandler<GetPlanQuery, BaseResponse>
     {
         var plans = await _cache.GetOrSetAsync(CacheKeyConstants.Plans, async () =>
         {
-            return await _planRepository
+            var items = await _planRepository
                 .GetAll()
                 .Include(p => p.PlanFeatures)
                 .ToListAsync();
+
+            return _mapper.Map<List<PlanDto>>(items);
         }, CacheIntervalConstants.Plans);
-
-        var responseModel = _mapper.Map<List<PlanDto>>(plans);
-
-        return BaseResponse.Response(responseModel, HttpStatusCode.OK);
+        
+        return BaseResponse.Response(plans, HttpStatusCode.OK);
     }
 }
