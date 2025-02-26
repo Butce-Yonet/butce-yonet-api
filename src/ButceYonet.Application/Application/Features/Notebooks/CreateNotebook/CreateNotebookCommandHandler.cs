@@ -41,7 +41,7 @@ public class CreateNotebookCommandHandler : BaseHandler<CreateNotebookCommand, B
             .AnyAsync(n => n.Name == request.Name);
 
         if (notebookIsExists)
-            throw new AlreadyExistsException();
+            throw new AlreadyExistsException(typeof(Notebook));
         
         var notebook = new Notebook
         {

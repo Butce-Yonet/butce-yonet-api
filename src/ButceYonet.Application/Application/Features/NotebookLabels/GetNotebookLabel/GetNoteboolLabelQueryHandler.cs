@@ -40,7 +40,7 @@ public class GetNoteboolLabelQueryHandler : BaseHandler<GetNotebookLabelQuery, B
                 .FirstOrDefaultAsync();
 
         if (notebookLabel is null)
-            throw new NotFoundException();
+            throw new NotFoundException(typeof(NotebookLabel));
         
         var notebookLabelDto = _mapper.Map<NotebookLabelDto>(notebookLabel);
         

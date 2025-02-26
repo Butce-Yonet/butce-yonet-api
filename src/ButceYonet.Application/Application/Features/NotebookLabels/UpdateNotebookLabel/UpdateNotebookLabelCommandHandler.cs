@@ -38,7 +38,7 @@ public class UpdateNotebookLabelCommandHandler : BaseHandler<UpdateNotebookLabel
             .FirstOrDefaultAsync();
 
         if (notebookLabel is null)
-            throw new NotFoundException();
+            throw new NotFoundException(typeof(NotebookLabel));
 
         var notebookNameIsUsed = await
             _notebookLabelRepository
@@ -50,7 +50,7 @@ public class UpdateNotebookLabelCommandHandler : BaseHandler<UpdateNotebookLabel
                 .AnyAsync();
 
         if (notebookNameIsUsed)
-            throw new AlreadyExistsException();
+            throw new AlreadyExistsException(typeof(NotebookLabel));
 
         notebookLabel.Name = request.Name;
         notebookLabel.ColorCode = request.ColorCode;

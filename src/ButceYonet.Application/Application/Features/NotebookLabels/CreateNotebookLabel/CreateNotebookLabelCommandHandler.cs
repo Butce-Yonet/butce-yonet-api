@@ -37,7 +37,7 @@ public class CreateNotebookLabelCommandHandler : BaseHandler<CreateNotebookLabel
         var notebook = await _notebookRepository.GetByIdAsync(request.NotebookId);
 
         if (notebook is null)
-            throw new NotFoundException();
+            throw new NotFoundException(typeof(Notebook));
 
         var userPlanValidatorParameters = new Dictionary<string, string>
         {
@@ -51,7 +51,7 @@ public class CreateNotebookLabelCommandHandler : BaseHandler<CreateNotebookLabel
             .AnyAsync(nl => nl.NotebookId == request.NotebookId && nl.Name == request.Name);
 
         if (notebookLabelIsExists)
-            throw new AlreadyExistsException();
+            throw new AlreadyExistsException(typeof(NotebookLabel));
 
         var notebookLabel = new NotebookLabel
         {

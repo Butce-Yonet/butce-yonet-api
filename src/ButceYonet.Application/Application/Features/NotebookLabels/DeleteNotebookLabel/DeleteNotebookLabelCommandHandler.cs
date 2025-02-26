@@ -41,7 +41,7 @@ public class DeleteNotebookLabelCommandHandler : BaseHandler<DeleteNotebookLabel
             .FirstOrDefaultAsync();
 
         if (notebookLabel is null)
-            throw new NotFoundException();
+            throw new NotFoundException(typeof(NotebookLabel));
 
         var notebookLabelHasTransaction = await
             _transactionLabelRepository

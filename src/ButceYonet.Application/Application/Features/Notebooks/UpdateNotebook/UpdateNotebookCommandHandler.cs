@@ -39,7 +39,7 @@ public class UpdateNotebookCommandHandler : BaseHandler<UpdateNotebookCommand, B
             .FirstOrDefaultAsync();
 
         if (notebook is null)
-            throw new NotFoundException();
+            throw new NotFoundException(typeof(Notebook));
 
         if (!notebook.NotebookUsers.Any(p => p.UserId == _user.Id && p.IsDefault))
             throw new Exception();

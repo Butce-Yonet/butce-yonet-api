@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ButceYonet.Consumers;
 
 [Consumer("user-created")]
-public class UserCreateDomainEventConsumer : BaseConsumer<UserCreatedDomainEvent>
+public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEvent>
 {
     private IRepository<User, ButceYonetAuthorizationDbContext> _userRepository;
     private IRepository<Plan, ButceYonetDbContext> _planRepository;
@@ -22,7 +22,7 @@ public class UserCreateDomainEventConsumer : BaseConsumer<UserCreatedDomainEvent
     
     private readonly IServiceProvider _serviceProvider;
     
-    public UserCreateDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
+    public UserCreatedDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }

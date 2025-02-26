@@ -39,7 +39,7 @@ public class GetNotebookQueryHandler : BaseHandler<GetNotebookQuery, BaseRespons
             .FirstOrDefaultAsync();
 
         if (notebook is null)
-            throw new NotFoundException();
+            throw new NotFoundException(typeof(Notebook));
         
         var notebookDto = _mapper.Map<NotebookDto>(notebook);
 

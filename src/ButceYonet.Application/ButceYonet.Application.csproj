@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Application\Features\NotebookUsers\" />
+      <Folder Include="Application\Features\NotebookUsers\GetNotebookUsers\" />
     </ItemGroup>
 
 </Project>

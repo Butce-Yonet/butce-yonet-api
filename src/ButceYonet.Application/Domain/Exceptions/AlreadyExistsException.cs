@@ -2,8 +2,10 @@ namespace ButceYonet.Application.Domain.Exceptions;
 
 public class AlreadyExistsException : Exception
 {
-    public AlreadyExistsException() : base("Record Already Exists")
+    public Type EntityType { get; set; }
+    
+    public AlreadyExistsException(Type entityType) : base("Record Already Exists")
     {
-        
+        EntityType = entityType;
     }
 }
