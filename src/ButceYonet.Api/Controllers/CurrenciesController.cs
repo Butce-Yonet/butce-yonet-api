@@ -8,10 +8,8 @@ namespace ButceYonet.Api.Controllers
 {
     public class CurrenciesController : BaseController
     {
-        private ILogger<CurrenciesController> _logger;
-        public CurrenciesController(IMediator mediator, ILogger<CurrenciesController> logger) : base(mediator)
+        public CurrenciesController(IMediator mediator) : base(mediator)
         {
-            _logger = logger;
         }
 
         /// <summary>

@@ -11,6 +11,7 @@ using DotBoil.EFCore;
 using DotBoil.Entities;
 using DotBoil.Localization;
 using DotBoil.Parameter;
+using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Application.Application.Features.Notebooks.CreateNotebook;
 
@@ -35,6 +36,13 @@ public class CreateNotebookCommandHandler : BaseHandler<CreateNotebookCommand, B
     {
         await _userPlanValidator.Validate(PlanFeatures.NotebookCount, new Dictionary<string, string>());
 
+        var notebookIsExists = await _notebookRepository
+            .Get()
+            .AnyAsync(n => n.Name == request.Name);
+
+        if (notebookIsExists)
+            throw new AlreadyExistsException();
+        
         var notebook = new Notebook
         {
             Name = request.Name,

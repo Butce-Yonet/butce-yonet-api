@@ -39,6 +39,18 @@ public class ApiExceptionHandlingMiddleware
             await WriteResponse(context,
                 BaseResponse.Response(new { }, HttpStatusCode.NotFound, notFoundException.Message));
         }
+        catch (AlreadyExistsException alreadyExistsException)
+        {
+            //TODO:
+            await WriteResponse(context,
+                BaseResponse.Response(new { }, HttpStatusCode.NotFound, alreadyExistsException.Message));
+        }
+        catch (BusinessRuleException businessRuleException)
+        {
+            //TODO:
+            await WriteResponse(context,
+                BaseResponse.Response(new { }, HttpStatusCode.NotFound, businessRuleException.Message));
+        }
         catch (Exception ex)
         {
             await WriteResponse(context,
