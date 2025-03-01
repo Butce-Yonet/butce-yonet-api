@@ -12,6 +12,21 @@ public class UserEntityTypeConfiguration : EFCoreEntityTypeConfiguration<User>
     public override void ConfigureDotBoilEntity(EntityTypeBuilder<User> builder)
     {
         builder
+            .Property(p => p.Name)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder
+            .Property(p => p.Surname)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder
+            .Property(p => p.Username)
+            .HasMaxLength(100)
+            .IsRequired();
+        
+        builder
             .Property(p => p.Email)
             .HasMaxLength(100)
             .IsRequired(false);

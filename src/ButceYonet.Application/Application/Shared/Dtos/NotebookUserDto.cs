@@ -6,4 +6,5 @@ public class NotebookUserDto
     public int UserId { get; set; }
     public int NotebookId { get; set; }
     public bool IsDefault { get; set; }
+    public UserDto User { get; set; }
 }

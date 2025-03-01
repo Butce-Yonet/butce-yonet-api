@@ -44,7 +44,7 @@ public class CreateNotebookLabelCommandHandler : BaseHandler<CreateNotebookLabel
             { "NotebookId", request.NotebookId.ToString() }
         };
 
-        _userPlanValidator.Validate(PlanFeatures.NotebookLabelCount, userPlanValidatorParameters);
+        await _userPlanValidator.Validate(PlanFeatures.NotebookLabelCount, userPlanValidatorParameters);
 
         var notebookLabelIsExists = await _notebookLabelRepository
             .Get()

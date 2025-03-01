@@ -33,13 +33,30 @@ public class DeleteNotebookUserCommandHandler : BaseHandler<DeleteNotebookUserCo
 
     public override async Task<BaseResponse> ExecuteRequest(DeleteNotebookUserCommand request, CancellationToken cancellationToken)
     {
+        var isNotebookOwner = await
+            _notebookUserRepository
+                .Get()
+                .Where(nu =>
+                    nu.NotebookId == request.NotebookId &&
+                    nu.UserId == _user.Id &&
+                    nu.IsDefault)
+                .AnyAsync();
+
+        if (!isNotebookOwner)
+            throw new BusinessRuleException("This notebook user is not default");
+        
         var notebookUser = await _notebookUserRepository
             .Get()
-            .Where(nu => nu.NotebookId == request.NotebookId && nu.UserId == request.UserId)
+            .Where(nu => 
+                nu.NotebookId == request.NotebookId &&
+                nu.UserId == request.UserId)
             .FirstOrDefaultAsync();
 
         if (notebookUser is null)
             throw new NotFoundException(typeof(NotebookUser));
+        
+        if (notebookUser.IsDefault)
+            throw new BusinessRuleException("Default notebook user could not be deleted"); //TODO:
         
         var notebookUserDeletedDomainEvent = new NotebookUserDeletedDomainEvent(notebookUser);
         notebookUser.AddEvent(notebookUserDeletedDomainEvent);

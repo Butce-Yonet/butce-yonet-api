@@ -71,6 +71,18 @@ public class CreateNotebookUserCommandHandler : BaseHandler<CreateNotebookUserCo
         if (notebookUserIsExists)
             throw new AlreadyExistsException(typeof(NotebookUser));
 
+        var isNotebookOwner = await
+            _notebookUserRepository
+                .Get()
+                .Where(nu =>
+                    nu.NotebookId == request.NotebookId &&
+                    nu.UserId == _user.Id &&
+                    nu.IsDefault)
+                .AnyAsync();
+
+        if (!isNotebookOwner)
+            throw new BusinessRuleException("This notebook user is not default"); //TODO:
+
         var notebookUser = new NotebookUser
         {
             UserId = user.Id,
