@@ -1,7 +1,8 @@
-using ButceYonet.Application.Application.Features.NotebookUsers.CreateNotebookUser;
-using ButceYonet.Application.Application.Features.NotebookUsers.DeleteNotebookUser;
-using ButceYonet.Application.Application.Features.NotebookUsers.GetNotebookUser;
-using ButceYonet.Application.Application.Features.NotebookUsers.GetNotebookUsers;
+using ButceYonet.Application.Application.Features.Transactions.CreateTransaction;
+using ButceYonet.Application.Application.Features.Transactions.DeleteTransaction;
+using ButceYonet.Application.Application.Features.Transactions.GetTransaction;
+using ButceYonet.Application.Application.Features.Transactions.GetTransactions;
+using ButceYonet.Application.Application.Features.Transactions.UpdateTransaction;
 using ButceYonet.Application.Application.Shared.Dtos;
 using DotBoil.Entities;
 using MediatR;
@@ -9,52 +10,54 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ButceYonet.Api.Controllers;
 
-[Route("api/notebooks/{notebookId}/users")]
-public class NotebookUsersController : BaseController
+[Route("api/notebooks/{notebookId}/transactions")]
+public class TransactionsController : BaseController
 {
-    public NotebookUsersController(IMediator mediator) : base(mediator)
+    public TransactionsController(IMediator mediator) 
+        : base(mediator)
     {
     }
 
     /// <summary>
-    /// İstenilen deftere ait tüm kullanıcıları getirmek amacıyla kullanılır
-    /// </summary>
-    /// <param name="notebookId">İstenilen defterin id</param>
-    /// <returns></returns>
-    [HttpGet]
-    [ProducesResponseType(typeof(BaseResponse<IEnumerable<NotebookUserDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(int notebookId)
-    {
-        var request = new GetNotebookUsersQuery(notebookId);
-        var response = await _mediator.Send(request);
-        return Response(response);
-    }
-
-    /// <summary>
-    /// İstenilen deftere ait spesifik bir kullanıcıyı getirmek amacıyla kullanılır
+    /// İstenilen deftere ait gelir-gider kalemlerini getirir
     /// </summary>
     /// <param name="notebookId"></param>
-    /// <param name="notebookUserId"></param>
+    /// <param name="request"></param>
     /// <returns></returns>
-    [HttpGet("{notebookUserId}")]
-    [ProducesResponseType(typeof(BaseResponse<NotebookUserDto>), StatusCodes.Status200OK)]
+    [HttpGet]
+    [ProducesResponseType(typeof(BaseResponse<PaginatedModel<TransactionDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(int notebookId, int notebookUserId)
+    public async Task<IActionResult> List(int notebookId, [FromQuery] GetTransactionsQuery request)
     {
-        var request = new GetNotebookUserQuery(notebookUserId, notebookId);
+        request.NotebookId = notebookId;
         var response = await _mediator.Send(request);
         return Response(response);
     }
 
     /// <summary>
-    /// İstenilen deftere ait kullanıcı eklemek için kullanılır
+    /// İstenilen deftere ait spesifik bir gelir-gider kalemini getirir
+    /// </summary>
+    /// <param name="notebookId"></param>
+    /// <param name="transactionId"></param>
+    /// <returns></returns>
+    [HttpGet("{transactionId}")]
+    [ProducesResponseType(typeof(BaseResponse<TransactionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Get(int notebookId, int transactionId)
+    {
+        var request = new GetTransactionQuery(notebookId, transactionId);
+        var response = await _mediator.Send(request);
+        return Response(response);
+    }
+
+    /// <summary>
+    /// İstenilen deftere gelir-gider kalemi eklemek için kullanılır
     /// </summary>
     /// <param name="notebookId"></param>
     /// <param name="request"></param>
@@ -65,7 +68,7 @@ public class NotebookUsersController : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Create(int notebookId, [FromBody] CreateNotebookUserCommand request)
+    public async Task<IActionResult> Create(int notebookId, [FromBody] CreateTransactionCommand request)
     {
         request.NotebookId = notebookId;
         var response = await _mediator.Send(request);
@@ -73,20 +76,34 @@ public class NotebookUsersController : BaseController
     }
 
     /// <summary>
-    /// İstenilen deftere ait kullanıcıyı silmek için kullanılır
+    /// İstenilen deftere ait spesifik bir gelir-gider kalemini güncellemek için kullanılır
     /// </summary>
     /// <param name="notebookId"></param>
-    /// <param name="userId"></param>
+    /// <param name="request"></param>
     /// <returns></returns>
-    [HttpDelete("{userId}")]
+    [HttpPut]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(int notebookId, int userId)
+    public async Task<IActionResult> Update(int notebookId, [FromBody] UpdateTransactionCommand request)
     {
-        var request = new DeleteNotebookUserCommand(notebookId, userId);
+        request.NotebookId = notebookId;
+        var response = await _mediator.Send(request);
+        return Response(response);
+    }
+
+    /// <summary>
+    /// İstenilen deftere ait spesifik bir gelir-gider kalemini silmek için kullanılır
+    /// </summary>
+    /// <param name="notebookId"></param>
+    /// <param name="transactionId"></param>
+    /// <returns></returns>
+    [HttpDelete("{transactionId}")]
+    public async Task<IActionResult> Delete(int notebookId, int transactionId)
+    {
+        var request = new DeleteTransactionCommand(notebookId, transactionId);
         var response = await _mediator.Send(request);
         return Response(response);
     }

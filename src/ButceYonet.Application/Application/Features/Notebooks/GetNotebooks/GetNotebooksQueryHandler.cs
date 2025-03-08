@@ -37,6 +37,7 @@ public class GetNotebooksQueryHandler : BaseHandler<GetNotebooksQuery, BaseRespo
             .Where(p => p.UserId == _user.Id)
             .Include(p => p.Notebook)
             .Select(p => p.Notebook)
+            .Where(p => !p.IsDeleted)
             .ToListAsync();
         
         var notebooksDto = _mapper.Map<List<NotebookDto>>(notebooks);

@@ -28,7 +28,7 @@ public class NotebookLabelsController : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(int notebookId)
+    public async Task<IActionResult> List(int notebookId)
     {
         var query = new GetNotebookLabelsQuery(notebookId);
         var response = await _mediator.Send(query);

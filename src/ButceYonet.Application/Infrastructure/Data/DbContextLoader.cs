@@ -9,6 +9,7 @@ public class DbContextLoader : EFCoreDbContextLoader
     public override Task LoadDbContext(IConfiguration configuration, IServiceCollection services)
     {
         services.AddDbContext<ButceYonetDbContext>();
+        services.AddDbContext<ButceYonetAuthorizationDbContext>();
         return Task.CompletedTask;
     }
 }

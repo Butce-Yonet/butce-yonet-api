@@ -10,11 +10,11 @@ using Microsoft.EntityFrameworkCore;
 namespace ButceYonet.Consumers;
 
 [Consumer("notebook-deleted")]
-public class NotebookDeletedDomainEventHandler : BaseConsumer<NotebookDeletedDomainEvent>
+public class NotebookDeletedDomainEventConsumer : BaseConsumer<NotebookDeletedDomainEvent>
 {
     private readonly IServiceProvider _serviceProvider;
     
-    public NotebookDeletedDomainEventHandler(IServiceProvider serviceProvider) : base(serviceProvider)
+    public NotebookDeletedDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
