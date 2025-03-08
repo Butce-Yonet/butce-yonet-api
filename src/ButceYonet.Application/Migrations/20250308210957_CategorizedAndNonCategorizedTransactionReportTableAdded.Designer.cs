@@ -3,6 +3,7 @@ using System;
 using ButceYonet.Application.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ButceYonet.Application.Migrations
 {
     [DbContext(typeof(ButceYonetDbContext))]
-    partial class ButceYonetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250308210957_CategorizedAndNonCategorizedTransactionReportTableAdded")]
+    partial class CategorizedAndNonCategorizedTransactionReportTableAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

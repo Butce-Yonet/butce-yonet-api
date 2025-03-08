@@ -35,6 +35,12 @@ public class CurrencyEntityTypeConfiguration : EFCoreEntityTypeConfiguration<Cur
             .WithOne(p => p.Currency)
             .HasForeignKey(p => p.CurrencyId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder
+            .HasMany<NonCategorizedTransactionReport>()
+            .WithOne(p => p.Currency)
+            .HasForeignKey(p => p.CurrencyId)
+            .OnDelete(DeleteBehavior.NoAction);
         
         builder
             .ToTable("Currencies");

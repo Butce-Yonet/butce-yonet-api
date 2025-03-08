@@ -53,11 +53,11 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
                 .Where(t =>
                     t.NotebookId == request.NotebookId &&
                     t.Id == request.TransactionId)
+                .Include(t => t.TransactionLabels)
                 .FirstOrDefaultAsync();
 
         if (transaction is null)
             throw new NotFoundException(typeof(Transaction));
-
 
         transaction.Name = request.Name;
         transaction.Description = request.Description;
@@ -72,6 +72,7 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
                 .Where(t =>
                     t.NotebookId == request.NotebookId &&
                     t.Id == request.TransactionId)
+                .Include(t => t.TransactionLabels)
                 .FirstOrDefaultAsync();
 
         var transactionUpdatedDomainEvent = new TransactionUpdatedDomainEvent();
