@@ -27,6 +27,12 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
 
     public override async Task ConsumeEvent(ConsumeContext<TransactionDeletedDomainEvent> context)
     {
+        if (!context.Message.Transaction.IsMatched)
+            return;
+
+        if (!context.Message.Transaction.IsProceed)
+            return;
+        
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
 

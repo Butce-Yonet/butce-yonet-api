@@ -14,6 +14,7 @@ namespace ButceYonet.Consumers;
 public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCreatedDomainEvent>
 {
     private readonly IServiceProvider _serviceProvider;
+    private IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
     private IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
     private IRepository<CategorizedTransactionReport, ButceYonetDbContext> _categorizedTransactionReportRepository;
     
@@ -24,18 +25,35 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
 
     public override async Task ConsumeEvent(ConsumeContext<TransactionCreatedDomainEvent> context)
     {
+        if (!context.Message.Transaction.IsMatched)
+            return;
+        
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
+
+        var transaction = await
+            _transactionRepository
+                .Get()
+                .Where(t => t.Id == context.Message.Transaction.Id)
+                .FirstOrDefaultAsync();
+
+        if (transaction is null)
+            return;
         
         await Task.WhenAll(
             ProcessNonCategorizedTransactionReport(context.Message),
             ProcessCategorizedTransactionReport(context.Message));
+
+        transaction.IsProceed = true;
+        _transactionRepository.Update(transaction);
 
         await _nonCategorizedTransactionReportRepository.SaveChangesAsync();
     }
 
     private void InitializeDependencies(IServiceScope scope)
     {
+        _transactionRepository =
+            scope.ServiceProvider.GetRequiredService<IRepository<Transaction, ButceYonetDbContext>>();
         _nonCategorizedTransactionReportRepository = scope.ServiceProvider
             .GetRequiredService<IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>>();
         _categorizedTransactionReportRepository = scope.ServiceProvider

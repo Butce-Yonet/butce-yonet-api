@@ -28,6 +28,12 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
 
     public override async Task ConsumeEvent(ConsumeContext<TransactionUpdatedDomainEvent> context)
     {
+        if (!context.Message.OldTransaction.IsMatched)
+            return;
+
+        if (!context.Message.NewTransaction.IsProceed)
+            return;
+        
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
 

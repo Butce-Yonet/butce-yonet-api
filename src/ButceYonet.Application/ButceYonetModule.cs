@@ -21,6 +21,7 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<ICurrentLanguage, CurrentLanguage>();
         DotBoilApp.Services.AddScoped<IUserPlanValidator, UserPlanValidator>();
         DotBoilApp.Services.AddScoped<IUser, User>();
+        DotBoilApp.Services.AddScoped<IRecurringTransactionIntervalsService, RecurringTransactionIntervalsService>();
 
         #region User Plan Rule Validators
 
