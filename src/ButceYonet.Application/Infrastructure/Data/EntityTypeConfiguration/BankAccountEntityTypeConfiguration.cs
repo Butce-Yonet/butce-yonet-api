@@ -35,6 +35,12 @@ public class BankAccountEntityTypeConfiguration : EFCoreEntityTypeConfiguration<
             .WithOne(p => p.BankAccount)
             .HasForeignKey(p => p.BankAccountId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder
+            .HasOne<Notebook>(p => p.Notebook)
+            .WithMany(p => p.BankAccounts)
+            .HasForeignKey(p => p.NotebookId)
+            .OnDelete(DeleteBehavior.NoAction);
         
         builder
             .ToTable("BankAccounts");

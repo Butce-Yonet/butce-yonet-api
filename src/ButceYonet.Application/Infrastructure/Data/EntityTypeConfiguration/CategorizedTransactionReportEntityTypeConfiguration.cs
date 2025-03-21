@@ -12,19 +12,7 @@ public class CategorizedTransactionReportEntityTypeConfiguration : EFCoreEntityT
     public override void ConfigureDotBoilEntity(EntityTypeBuilder<CategorizedTransactionReport> builder)
     {
         builder
-            .Property(p => p.NotebookId)
-            .IsRequired();
-
-        builder
-            .Property(p => p.NotebookLabelId)
-            .IsRequired();
-
-        builder
             .Property(p => p.TransactionType)
-            .IsRequired();
-
-        builder
-            .Property(p => p.CurrencyId)
             .IsRequired();
 
         builder
@@ -36,19 +24,19 @@ public class CategorizedTransactionReportEntityTypeConfiguration : EFCoreEntityT
             .IsRequired();
         
         builder
-            .HasOne<Notebook>()
+            .HasOne<Notebook>(p => p.Notebook)
             .WithMany(p => p.CategorizedTransactionReports)
             .HasForeignKey(p => p.NotebookId)
             .OnDelete(DeleteBehavior.NoAction);
-
+        
         builder
             .HasOne<NotebookLabel>()
             .WithMany(p => p.CategorizedTransactionReports)
             .HasForeignKey(p => p.NotebookLabelId)
             .OnDelete(DeleteBehavior.NoAction);
-
+        
         builder
-            .HasOne<Currency>()
+            .HasOne<Currency>(p => p.Currency)
             .WithMany(p => p.CategorizedTransactionReports)
             .HasForeignKey(p => p.CurrencyId)
             .OnDelete(DeleteBehavior.NoAction);

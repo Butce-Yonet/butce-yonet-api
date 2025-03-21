@@ -10,14 +10,13 @@ public class Currency : BaseEntity
     public bool IsSymbolRight { get; set; }
     
     public virtual ICollection<Transaction> Transactions { get; set; }
-    public virtual ICollection<NonCategorizedTransactionReport> NonCategorizedTransactionReports { get; set; }
-    
     public virtual ICollection<CategorizedTransactionReport> CategorizedTransactionReports { get; set; }
+    public virtual ICollection<NonCategorizedTransactionReport> NonCategorizedTransactionReports { get; set; }
 
     public Currency()
     {
         Transactions = new List<Transaction>();
-        NonCategorizedTransactionReports = new List<NonCategorizedTransactionReport>();
         CategorizedTransactionReports = new List<CategorizedTransactionReport>();
+        NonCategorizedTransactionReports = new List<NonCategorizedTransactionReport>();
     }
 }

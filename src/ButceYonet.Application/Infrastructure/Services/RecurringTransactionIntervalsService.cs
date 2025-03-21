@@ -1,5 +1,6 @@
 using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Domain.Enums;
+using ButceYonet.Application.Domain.Exceptions;
 
 namespace ButceYonet.Application.Infrastructure.Services;
 
@@ -72,5 +73,7 @@ public class RecurringTransactionIntervalsService : IRecurringTransactionInterva
 
             return new DateTime(buffDay.Year, buffDay.Month, day);
         }
+
+        throw new NotFoundException(typeof(RecurringTransactionIntervals));
     }
 }

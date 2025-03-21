@@ -34,6 +34,12 @@ public class NotebookLabelEntityTypeConfiguration : EFCoreEntityTypeConfiguratio
             .OnDelete(DeleteBehavior.NoAction);
         
         builder
+            .HasMany<CategorizedTransactionReport>(p => p.CategorizedTransactionReports)
+            .WithOne(p => p.NotebookLabel)
+            .HasForeignKey(p => p.NotebookLabelId)
+            .OnDelete(DeleteBehavior.NoAction);
+        
+        builder
             .ToTable("NotebookLabels");
     }
 }

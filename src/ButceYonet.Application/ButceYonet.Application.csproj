@@ -23,4 +23,8 @@
       <PackageReference Include="DotBoil.Versioning" Version="1.0.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Application\Features\RecurringTransactions\" />
+    </ItemGroup>
+
 </Project>

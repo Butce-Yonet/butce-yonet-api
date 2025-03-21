@@ -20,8 +20,9 @@ public class ButceYonetDbContext : EFCoreDbContext
     public DbSet<PlanFeature> PlanFeatures { get; set; }
     public DbSet<UserPlan> UserPlans { get; set; }
     public DbSet<DefaultLabel> DefaultLabels { get; set; }
-    public DbSet<NonCategorizedTransactionReport> NonCategorizedTransactionReports { get; set; }
     public DbSet<CategorizedTransactionReport> CategorizedTransactionReports { get; set; }
+    public DbSet<NonCategorizedTransactionReport> NonCategorizedTransactionReports { get; set; }
+    public DbSet<RecurringTransaction> RecurringTransactions { get; set; }
     
     public ButceYonetDbContext(IServiceProvider serviceProvider) : base(serviceProvider)
     {

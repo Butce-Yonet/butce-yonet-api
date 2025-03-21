@@ -20,25 +20,21 @@ public class NonCategorizedTransactionReportEntityTypeConfiguration : EFCoreEnti
             .IsRequired();
 
         builder
-            .Property(p => p.CurrencyId)
-            .IsRequired();
-
-        builder
             .Property(p => p.Amount)
             .IsRequired();
 
         builder
             .Property(p => p.Term)
             .IsRequired();
-
+        
         builder
-            .HasOne<Notebook>()
+            .HasOne<Notebook>(p => p.Notebook)
             .WithMany(p => p.NonCategorizedTransactionReports)
             .HasForeignKey(p => p.NotebookId)
             .OnDelete(DeleteBehavior.NoAction);
-
+        
         builder
-            .HasOne<Currency>()
+            .HasOne<Currency>(p => p.Currency)
             .WithMany(p => p.NonCategorizedTransactionReports)
             .HasForeignKey(p => p.CurrencyId)
             .OnDelete(DeleteBehavior.NoAction);
