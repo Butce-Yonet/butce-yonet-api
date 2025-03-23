@@ -1,11 +1,11 @@
 using ButceYonet.Application.Domain.Enums;
-using DotBoil.Entities;
 
-namespace ButceYonet.Application.Domain.Entities;
+namespace ButceYonet.Application.Application.Shared.Dtos;
 
-public class RecurringTransaction : BaseEntity
+public class RecurringTransactionDto
 {
-    public int NotebookId { get; set; }
+    public int Id { get; set; }
+    public NotebookDto Notebook { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
     public DateTime StartDate { get; set; }
@@ -13,5 +13,5 @@ public class RecurringTransaction : BaseEntity
     public RecurringTransactionIntervals Frequency { get; set; }
     public int? Interval { get; set; }
     public DateTime? NextOccurrence { get; set; }
-    public string StateData { get; set; }
+    public TransactionDto Transaction { get; set; }
 }

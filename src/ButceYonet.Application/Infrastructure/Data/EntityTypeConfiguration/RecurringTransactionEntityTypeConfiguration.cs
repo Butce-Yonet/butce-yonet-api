@@ -40,8 +40,7 @@ public class RecurringTransactionEntityTypeConfiguration : EFCoreEntityTypeConfi
             .Property(p => p.Interval);
 
         builder
-            .Property(p => p.NextOccurrence)
-            .IsRequired();
+            .Property(p => p.NextOccurrence);
 
         builder
             .Property(p => p.StateData)
