@@ -7,4 +7,14 @@ public class GetRecurringTransactionQuery : PaginationFilter, IRequest<BaseRespo
 {
     public int NotebookId { get; set; }
     public int RecurringTransactionId { get; set; }
+
+    public GetRecurringTransactionQuery()
+    {
+    }
+
+    public GetRecurringTransactionQuery(int notebookId, int recurringTransactionId)
+    {
+        NotebookId = notebookId;
+        RecurringTransactionId = recurringTransactionId;
+    }
 }
