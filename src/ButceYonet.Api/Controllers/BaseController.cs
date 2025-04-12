@@ -1,3 +1,4 @@
+using ButceYonet.Application.Application;
 using DotBoil.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ namespace ButceYonet.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ServiceFilter(typeof(JwtAuthFilterAttribute))]
     public class BaseController : ControllerBase
     {
         protected readonly IMediator _mediator;

@@ -21,6 +21,7 @@
       <PackageReference Include="DotBoil.TemplateEngine" Version="1.0.1" />
       <PackageReference Include="DotBoil.Validator" Version="1.0.1" />
       <PackageReference Include="DotBoil.Versioning" Version="1.0.1" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
     </ItemGroup>
 
 </Project>

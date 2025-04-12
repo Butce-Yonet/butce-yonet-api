@@ -51,6 +51,12 @@ public class ApiExceptionHandlingMiddleware
             await WriteResponse(context,
                 BaseResponse.Response(new { }, HttpStatusCode.NotFound, businessRuleException.Message));
         }
+        catch (JwtAuthorizationFailException jwtAuthorizationFailException)
+        {
+            //TODO:
+            await WriteResponse(context,
+                BaseResponse.Response(new { }, HttpStatusCode.Unauthorized, jwtAuthorizationFailException.Message));
+        }
         catch (Exception ex)
         {
             await WriteResponse(context,
