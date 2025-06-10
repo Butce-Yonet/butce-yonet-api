@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ButceYonet.Application.Migrations
 {
     [DbContext(typeof(ButceYonetDbContext))]
-    [Migration("20250321214749_RecurringTransactionsTableNextOccurenceColumnModifiedNullable_2")]
-    partial class RecurringTransactionsTableNextOccurenceColumnModifiedNullable_2
+    [Migration("20250610155618_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
