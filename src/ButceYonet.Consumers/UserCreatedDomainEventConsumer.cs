@@ -2,6 +2,7 @@ using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Infrastructure.Data;
+using DotBoil.AuthGuard.Application.Domain.DomainEvents;
 using DotBoil.Caching;
 using DotBoil.EFCore;
 using DotBoil.MassTransit.Attributes;

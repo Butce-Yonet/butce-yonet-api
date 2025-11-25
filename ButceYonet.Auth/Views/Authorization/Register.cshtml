@@ -1,0 +1,97 @@
+@using DotBoil.Localization
+@using DotBoil.Parameter
+@inject ILocalize localize
+@inject IParameterManager parameters
+@{
+    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
+    var currentUrl = $"/connect/authorize{Context.Request.QueryString}";
+    var parameterLogo = await parameters.GetParameterValue<string>("AuthGuard", "Logo");
+    var parameterLogoDark = await parameters.GetParameterValue<string>("AuthGuard", "LogoDark");
+    var loginUrl = $"/connect/authorize{Context.Request.QueryString}";
+}
+
+@model ButceYonet.Auth.ViewModels.RegisterViewModel
+
+<div class="row m-0">
+    <div class="col-12 p-0">
+        <div class="login-card login-dark">
+            <div>
+                <div><a class="logo" href="@currentUrl"><img class="img-fluid for-light" src="@parameterLogo"><img class="img-fluid for-dark" src="@parameterLogoDark"></a></div>
+                <div class="login-main">
+                    <form class="theme-form" method="post">
+                        <partial name="_Language"/>
+                        <h4>@await localize.LocalizeText("Login", "RegisterTitle")</h4>
+
+                        @if (ViewBag.Message != null)
+                        {
+                            <p>@ViewBag.Message</p>
+                        }
+
+                        @foreach (var query in Context.Request.Query)
+                        {
+                            <input type="hidden" name="@query.Key" value="@query.Value"/>
+                        }
+                        <div class="form-group">
+                            <label class="col-form-label">@await localize.LocalizeText("Login", "Name")</label>
+                            <input class="form-control" type="text" required="" placeholder="@await localize.LocalizeText("Login", "Name")" asp-for="Name">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label">@await localize.LocalizeText("Login", "Surname")</label>
+                            <input class="form-control" type="text" required="" placeholder="@await localize.LocalizeText("Login", "Surname")" asp-for="Surname">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label">@await localize.LocalizeText("Login", "EmailAddress")</label>
+                            <input class="form-control" type="email" required="" placeholder="user@gmail.com" asp-for="Email">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label">@await localize.LocalizeText("Login", "Password")</label>
+                            <div class="form-input position-relative">
+                                <input class="form-control" type="password" required="" placeholder="*********" asp-for="Password">
+                                <div class="show-hide"><span class="show"><i class="fa fa-eye"></i> </span></div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-0">
+                            <div class="form-check">
+                            </div>
+                            <a class="link" href="@loginUrl">@await localize.LocalizeText("Login", "SignIn")</a>
+                            <div class="text-end">
+                                <button class="btn btn-primary btn-block w-100 mt-3" type="submit">@await localize.LocalizeText("Login", "CreateAccount")</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('DOMContentLoaded', function (){
+        var element = document.getElementsByClassName('show-hide')[0];
+
+        if (element === undefined)
+            return;
+
+        element.addEventListener('click', function (){
+            var iconElement = document.querySelector('i', element);
+            if (iconElement === null || iconElement === undefined)
+                return;
+
+            var className = iconElement.className;
+            var typeName = 'password';
+
+            if (className === 'fa fa-eye'){
+                iconElement.classList.remove('fa-eye');
+                iconElement.classList.add('fa-eye-slash');
+
+                typeName = 'text';
+
+            }else{
+                iconElement.classList.remove('fa-eye-slash');
+                iconElement.classList.add('fa-eye');
+            }
+
+            document.getElementById('Password').type = typeName;
+        })
+    })
+</script>

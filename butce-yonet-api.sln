@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButceYonet.Api", "src\Butce
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButceYonet.Consumers", "src\ButceYonet.Consumers\ButceYonet.Consumers.csproj", "{91A3B804-3258-460F-A35F-421EFECF01C9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButceYonet.Auth", "ButceYonet.Auth\ButceYonet.Auth.csproj", "{61D00852-34F0-4FA0-A54C-698DC0AB0AB0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{91A3B804-3258-460F-A35F-421EFECF01C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91A3B804-3258-460F-A35F-421EFECF01C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91A3B804-3258-460F-A35F-421EFECF01C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61D00852-34F0-4FA0-A54C-698DC0AB0AB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61D00852-34F0-4FA0-A54C-698DC0AB0AB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61D00852-34F0-4FA0-A54C-698DC0AB0AB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61D00852-34F0-4FA0-A54C-698DC0AB0AB0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

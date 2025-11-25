@@ -1,0 +1,98 @@
+@using DotBoil.Localization
+@using DotBoil.Parameter
+@model ButceYonet.Auth.ViewModels.VerifyOtpViewModel
+@inject IParameterManager parameters
+@inject ILocalize localize
+
+@{
+    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
+    var currentUrl = $"/connect/authorize{Context.Request.QueryString}";
+    var parameterLogo = await parameters.GetParameterValue<string>("AuthGuard", "Logo");
+    var parameterLogoDark = await parameters.GetParameterValue<string>("AuthGuard", "LogoDark");
+    var verifyOtpUrl = $"/authorize/verify_otp{Context.Request.QueryString}";
+    var resendOtpUrl = $"/authorize/resend_otp{Context.Request.QueryString}";
+    
+    var prefix = "?";
+
+    if (resendOtpUrl.Contains("&"))
+        prefix = "&";
+    
+    if (!Context.Request.Query.ContainsKey("email"))
+        resendOtpUrl = $"{resendOtpUrl}{prefix}email={Model.Email}";
+}
+
+<div class="row m-0">
+    <div class="col-12 p-0">
+        <div class="login-card login-dark">
+            <div>
+                <div><a class="logo" href="@currentUrl"><img class="img-fluid for-light" src="@parameterLogo"><img class="img-fluid for-dark" src="@parameterLogoDark"></a></div>
+                <div class="login-main">
+                    <form action="@verifyOtpUrl" class="theme-form" method="post">
+                        <partial name="_Language"/>
+                        <h4>@await localize.LocalizeText("Login", "VerifyOtpTitle")</h4>
+
+                        @if (ViewBag.Message != null)
+                        {
+                            <p>@ViewBag.Message</p>
+                        }
+                        
+                        <input type="hidden" name="Email" value="@Model.Email"/>
+                        
+                        @foreach (var query in Context.Request.Query)
+                        {
+                            <input type="hidden" name="@query.Key" value="@query.Value"/>
+                        }
+                        <div class="form-group">
+                            <label class="col-form-label">@await localize.LocalizeText("Login", "OtpCode")</label>
+                            <input class="form-control" required="" asp-for="OtpCode"/>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label">@await localize.LocalizeText("Login", "Password")</label>
+                            <div class="form-input position-relative">
+                                <input class="form-control" type="password" required="" placeholder="*********" asp-for="Password">
+                                <div class="show-hide"><span class="show"><i class="fa fa-eye"></i> </span></div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-0">
+                            <div class="text-end">
+                                <button class="btn btn-primary btn-block w-100 mt-3" type="submit">@await localize.LocalizeText("Login", "RenewPassword")</button>
+                                <a class="btn btn-primary btn-block w-100 mt-3" href="@resendOtpUrl">@await localize.LocalizeText("Login", "ResendOtp")</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('DOMContentLoaded', function (){
+        var element = document.getElementsByClassName('show-hide')[0];
+        
+        if (element === undefined)
+            return;
+        
+        element.addEventListener('click', function (){
+            var iconElement = document.querySelector('i', element);
+            if (iconElement === null || iconElement === undefined)
+                return;
+            
+            var className = iconElement.className;
+            var typeName = 'password';
+
+            if (className === 'fa fa-eye'){
+                iconElement.classList.remove('fa-eye');
+                iconElement.classList.add('fa-eye-slash');
+                
+                typeName = 'text';
+                
+            }else{
+                iconElement.classList.remove('fa-eye-slash');
+                iconElement.classList.add('fa-eye');
+            }   
+            
+            document.getElementById('Password').type = typeName;
+        })        
+    })
+</script>
