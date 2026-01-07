@@ -61,8 +61,9 @@ public class DeleteTransactionCommandHandler : BaseHandler<DeleteTransactionComm
 
         var transactionDeletedDomainEvent = new TransactionDeletedDomainEvent(transaction);
         transaction.AddEvent(transactionDeletedDomainEvent);
-        
-        _transactionRepository.Remove(transaction);
+
+        transaction.IsDeleted = true;
+        _transactionRepository.Update(transaction);
         await _transactionRepository.SaveChangesAsync();
             
         return BaseResponse.Response(new {}, HttpStatusCode.OK);

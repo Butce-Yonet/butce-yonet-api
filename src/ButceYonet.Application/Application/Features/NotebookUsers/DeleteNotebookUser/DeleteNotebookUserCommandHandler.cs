@@ -61,7 +61,8 @@ public class DeleteNotebookUserCommandHandler : BaseHandler<DeleteNotebookUserCo
         var notebookUserDeletedDomainEvent = new NotebookUserDeletedDomainEvent(notebookUser);
         notebookUser.AddEvent(notebookUserDeletedDomainEvent);
         
-        _notebookUserRepository.Remove(notebookUser);
+        notebookUser.IsDeleted = true;
+        _notebookUserRepository.Update(notebookUser);
         await _notebookUserRepository.SaveChangesAsync();
 
         return BaseResponse.Response(new {}, HttpStatusCode.OK);

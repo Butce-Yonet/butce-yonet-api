@@ -3,7 +3,9 @@ using System.Text;
 using ButceYonet.Application.Infrastructure.Configuration;
 using DotBoil;
 using DotBoil.Configuration;
+using DotBoil.Health;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +25,8 @@ var dotboilAssemblies = new List<string>
     "ButceYonet.Application",
     "DotBoil.EFCore",
     "DotBoil.MassTransit",
-    "DotBoil.Swag"
+    "DotBoil.Swag",
+    "DotBoil.Health"
 }.Select(assemblyName => Assembly.Load(assemblyName)).ToArray();
 
 await builder.AddDotBoil(dotboilAssemblies);
@@ -64,7 +67,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.MapControllers();
 

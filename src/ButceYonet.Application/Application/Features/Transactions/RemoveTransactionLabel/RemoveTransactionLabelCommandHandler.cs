@@ -70,8 +70,9 @@ public class RemoveTransactionLabelCommandHandler : BaseHandler<RemoveTransactio
         var transactionLabelRemoved =
             new TransactionLabelRemovedDomainEvent(transaction.Id, transactionLabel.NotebookLabelId);
         transactionLabel.AddEvent(transactionLabelRemoved);
-        
-        _transactionLabelRepository.Remove(transactionLabel);
+
+        transactionLabel.IsDeleted = true;
+        _transactionLabelRepository.Update(transactionLabel);
         await _transactionLabelRepository.SaveChangesAsync();
         
         return BaseResponse.Response(new {}, HttpStatusCode.OK);

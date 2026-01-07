@@ -55,16 +55,21 @@ namespace ButceYonet.Api.Controllers
         /// <summary>
         /// Kullanıcının hesap defterini silmek için kullanılır
         /// </summary>
-        /// <param name="command"></param>
+        /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete]
+        [HttpDelete("{id}")]
         [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete([FromBody] DeleteNotebookCommand command)
+        public async Task<IActionResult> Delete(int id)
         {
+            var command = new DeleteNotebookCommand
+            {
+                Id = id
+            };
+            
             var response = await _mediator.Send(command);
             
             return Response(response);

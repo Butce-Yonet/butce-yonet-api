@@ -49,8 +49,9 @@ public class DeleteNotebookCommandHandler : BaseHandler<DeleteNotebookCommand, B
         var notebookDeletedDomainEvent = new NotebookDeletedDomainEvent(request.Id);
         
         notebook.AddEvent(notebookDeletedDomainEvent);
-        
-        _notebookRepository.Remove(notebook);
+
+        notebook.IsDeleted = true;
+        _notebookRepository.Update(notebook);
         await _notebookRepository.SaveChangesAsync();
 
         return BaseResponse.Response(new { }, HttpStatusCode.OK);

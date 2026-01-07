@@ -56,8 +56,9 @@ public class DeleteRecurringTransactionCommandHandler : BaseHandler<DeleteRecurr
 
         if (recurringTransaction is null)
             throw new NotFoundException(typeof(RecurringTransaction));
-        
-        _recurringTransactionRepository.Remove(recurringTransaction);
+
+        recurringTransaction.IsDeleted = true;
+        _recurringTransactionRepository.Update(recurringTransaction);
         await _recurringTransactionRepository.SaveChangesAsync();
         
         return BaseResponse.Response(new {}, HttpStatusCode.OK);
