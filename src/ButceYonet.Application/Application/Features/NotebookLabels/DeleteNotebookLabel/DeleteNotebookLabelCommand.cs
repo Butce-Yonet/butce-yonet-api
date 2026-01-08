@@ -15,6 +15,6 @@ public class DeleteNotebookLabelCommand : IRequest<BaseResponse>
     public DeleteNotebookLabelCommand(int notebookId, int notebookLabelId)
     {
         NotebookId = notebookId;
-        notebookLabelId = notebookLabelId;
+        NotebookLabelId = notebookLabelId;
     }
 }

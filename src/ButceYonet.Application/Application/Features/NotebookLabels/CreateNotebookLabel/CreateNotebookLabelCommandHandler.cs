@@ -30,6 +30,8 @@ public class CreateNotebookLabelCommandHandler : BaseHandler<CreateNotebookLabel
         IRepository<NotebookLabel, ButceYonetDbContext> notebookLabelRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
+        _notebookRepository = notebookRepository;
+        _notebookLabelRepository = notebookLabelRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(CreateNotebookLabelCommand request, CancellationToken cancellationToken)

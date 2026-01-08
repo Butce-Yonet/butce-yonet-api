@@ -52,7 +52,7 @@ public class DeleteNotebookLabelCommandHandler : BaseHandler<DeleteNotebookLabel
         if (notebookLabelHasTransaction)
             throw new BusinessRuleException("This label is associated with a transaction"); //TODO:
 
-        notebookLabel.IsDeleted = false;
+        notebookLabel.IsDeleted = true;
         _notebookLabelRepository.Update(notebookLabel);
         await _notebookLabelRepository.SaveChangesAsync();
 
