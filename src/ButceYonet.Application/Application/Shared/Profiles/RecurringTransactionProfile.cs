@@ -66,8 +66,13 @@ public class RecurringTransactionProfile : Profile
             if (notebook is null || currency is null)
                 return null;
 
-            var transaction = JsonSerializer.Deserialize<Transaction>(source.StateData);
+            var transactions = JsonSerializer.Deserialize<List<Transaction>>(source.StateData);
 
+            if (!transactions.Any())
+                return null;
+            
+            var transaction = transactions.FirstOrDefault();
+            
             var dto = new TransactionDto
             {
                 NotebookId = notebook.Id,
@@ -97,7 +102,7 @@ public class RecurringTransactionProfile : Profile
 
             foreach (var labels in transaction.TransactionLabels)
             {
-                var label = notebookLabels.FirstOrDefault(nl => nl.Id == labels.Id);
+                var label = notebookLabels.FirstOrDefault(nl => nl.Id == labels.NotebookLabelId);
 
                 if (label is null)
                     continue;

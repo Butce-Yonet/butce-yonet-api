@@ -10,6 +10,7 @@ using DotBoil.EFCore;
 using DotBoil.Entities;
 using DotBoil.Localization;
 using DotBoil.Parameter;
+using MassTransit.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Application.Application.Features.Transactions.UpdateTransaction;
@@ -18,6 +19,8 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
+    private readonly IRepository<TransactionLabel, ButceYonetDbContext> _transactionLabelRepository;
+    private readonly IRepository<NotebookLabel, ButceYonetDbContext> _notebookLabelRepository;
     
     public UpdateTransactionCommandHandler(
         ICache cache,
@@ -27,11 +30,15 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<Transaction, ButceYonetDbContext> transactionRepository)
+        IRepository<Transaction, ButceYonetDbContext> transactionRepository,
+        IRepository<TransactionLabel, ButceYonetDbContext> transactionLabelRepository,
+        IRepository<NotebookLabel, ButceYonetDbContext> notebookLabelRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
         _transactionRepository = transactionRepository;
+        _transactionLabelRepository = transactionLabelRepository;
+        _notebookLabelRepository = notebookLabelRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(UpdateTransactionCommand request, CancellationToken cancellationToken)
@@ -65,6 +72,31 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
         transaction.CurrencyId = request.CurrencyId;
         transaction.TransactionType = request.TransactionType;
         transaction.TransactionDate = request.TransactionDate;
+
+        foreach (var label in transaction.TransactionLabels)
+        {
+            label.IsDeleted = true;
+            _transactionLabelRepository.Update(label);
+        }
+
+        var notebookLabels = await
+            _notebookLabelRepository
+                .GetAll()
+                .Where(nl => nl.NotebookId == request.NotebookId)
+                .ToListAsync();
+        
+        foreach (var label in request.Labels)
+        {
+            if (notebookLabels.Any(nl => nl.Id == label))
+            {
+                transaction.TransactionLabels.Add(new TransactionLabel
+                {
+                    NotebookLabelId = label
+                });    
+            }
+            
+            continue;
+        }
         
         var oldTransaction =  await
             _transactionRepository

@@ -82,7 +82,7 @@ public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionComm
                 .Where(nl => requestItem.Labels.Contains(nl.Id))
                 .Select(nl => new TransactionLabel
                 {
-                    NotebookLabelId = nl.NotebookId
+                    NotebookLabelId = nl.Id
                 }).ToList();
 
             transaction.IsMatched = transaction.TransactionLabels.Any();

@@ -13,10 +13,6 @@ public class CreateRecurringTransactionCommandValidator : AbstractValidator<Crea
             .NotEmpty()
             .MaximumLength(128);
 
-        RuleFor(p => p.Description)
-            .NotEmpty()
-            .MaximumLength(256);
-
         RuleFor(p => p.StartDate)
             .NotNull();
 

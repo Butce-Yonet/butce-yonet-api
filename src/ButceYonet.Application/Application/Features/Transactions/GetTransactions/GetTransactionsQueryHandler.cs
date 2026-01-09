@@ -11,6 +11,7 @@ using DotBoil.EFCore.Extensions;
 using DotBoil.Entities;
 using DotBoil.Localization;
 using DotBoil.Parameter;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Application.Application.Features.Transactions.GetTransactions;
@@ -19,6 +20,7 @@ public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, Bas
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
+    private IHttpContextAccessor _httpContextAccessor;
     
     public GetTransactionsQueryHandler(
         ICache cache, 
@@ -28,11 +30,13 @@ public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, Bas
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<Transaction, ButceYonetDbContext> transactionRepository)
+        IRepository<Transaction, ButceYonetDbContext> transactionRepository,
+        IHttpContextAccessor httpContextAccessor)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
         _transactionRepository = transactionRepository;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(GetTransactionsQuery request, CancellationToken cancellationToken)
@@ -48,6 +52,15 @@ public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, Bas
         if (!isNotebookUser)
             throw new BusinessRuleException("User is not in notebook"); //TODO:
 
+        var overrideRequest = new GetTransactionsQuery();
+        overrideRequest.NotebookId = request.NotebookId;
+        overrideRequest.StartTime = request.StartTime;
+        overrideRequest.EndTime = request.EndTime;
+        
+        var paginationRequest = new PaginationFilter(
+            int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageNumber"].ToString()),
+            int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageSize"].ToString()));
+        
         var transactions = await
             _transactionRepository
                 .GetAll()
@@ -57,9 +70,9 @@ public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, Bas
                 .WhereIf(request.EndTime.HasValue, t => t.TransactionDate <= request.EndTime)
                 .Include(t => t.Notebook)
                 .Include(t => t.Currency)
-                .Include(t => t.TransactionLabels)
+                .Include(t => t.TransactionLabels.Where(tl => !tl.IsDeleted))
                 .ThenInclude(tl => tl.NotebookLabel)
-                .PaginateAsync(request);
+                .PaginateAsync(paginationRequest);
 
         var paginateItems = _mapper.Map<List<TransactionDto>>(transactions.Items);
         var paginatedResponse = new PaginatedModel<TransactionDto>(transactions.PageNumber, transactions.PageSize,

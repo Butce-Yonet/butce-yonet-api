@@ -14,4 +14,5 @@ public class UpdateTransactionCommand : IRequest<BaseResponse>
     public int CurrencyId { get; set; }
     public TransactionTypes TransactionType { get; set; }
     public DateTime TransactionDate { get; set; }
+    public List<int> Labels { get; set; }
 }

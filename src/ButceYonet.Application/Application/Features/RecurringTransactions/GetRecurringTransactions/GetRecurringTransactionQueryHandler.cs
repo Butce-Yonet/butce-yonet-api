@@ -13,17 +13,19 @@ using DotBoil.EFCore.Extensions;
 using DotBoil.Entities;
 using DotBoil.Localization;
 using DotBoil.Parameter;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Application.Application.Features.RecurringTransactions.GetRecurringTransactions;
 
-public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTransactionQuery, BaseResponse>
+public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTransactionsQuery, BaseResponse>
 {
     private readonly IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
     private readonly IRepository<NotebookLabel, ButceYonetDbContext> _notebookLabelRepository;
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
     private readonly IRepository<Currency, ButceYonetDbContext> _currencyRepository;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     
     public GetRecurringTransactionQueryHandler(
         ICache cache,
@@ -36,7 +38,8 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
         IRepository<NotebookLabel, ButceYonetDbContext> notebookLabelRepository,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository,
-        IRepository<Currency, ButceYonetDbContext> currencyRepository)
+        IRepository<Currency, ButceYonetDbContext> currencyRepository,
+        IHttpContextAccessor httpContextAccessor)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookRepository = notebookRepository;
@@ -44,9 +47,10 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
         _notebookUserRepository = notebookUserRepository;
         _recurringTransactionRepository = recurringTransactionRepository;
         _currencyRepository = currencyRepository;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public override async Task<BaseResponse> ExecuteRequest(GetRecurringTransactionQuery request, CancellationToken cancellationToken)
+    public override async Task<BaseResponse> ExecuteRequest(GetRecurringTransactionsQuery request, CancellationToken cancellationToken)
     {
         var isNotebookUser = await
             _notebookUserRepository
@@ -67,12 +71,16 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
 
         if (notebook is null)
             throw new BusinessRuleException(""); //TODO:
-
+        
+        var paginationRequest = new PaginationFilter(
+            int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageNumber"].ToString()),
+            int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageSize"].ToString()));
+        
         var recurringTransactions = await
             _recurringTransactionRepository
                 .GetAll()
                 .Where(rt => rt.NotebookId == request.NotebookId)
-                .PaginateAsync(request);
+                .PaginateAsync(paginationRequest);
 
         var currencies = await _currencyRepository.GetAll().ToListAsync();
         var notebookLabels = await _notebookLabelRepository.GetAll().Where(nl => nl.NotebookId == request.NotebookId).ToListAsync();
@@ -81,7 +89,12 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
 
         foreach (var item in recurringTransactions.Items)
         {
-            var transaction = JsonSerializer.Deserialize<Transaction>(item.StateData);
+            var transactions = JsonSerializer.Deserialize<List<Transaction>>(item.StateData);
+            
+            if (!transactions.Any())
+                continue;
+            
+            var transaction = transactions.FirstOrDefault();
             var currency = currencies.Where(c => c.Id == transaction.CurrencyId).FirstOrDefault();
             var recurringTransactionDto = _mapper.Map<RecurringTransactionDto>(item, opt =>
             {

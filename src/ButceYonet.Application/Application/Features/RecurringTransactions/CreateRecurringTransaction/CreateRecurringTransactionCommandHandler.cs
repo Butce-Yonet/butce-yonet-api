@@ -62,7 +62,7 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
         var transaction = new Transaction
         {
             NotebookId = request.NotebookId,
-            ExternalId = Guid.NewGuid().ToString(),
+            ExternalId = "",
             Name = request.Transaction.Name,
             Description = request.Transaction.Description,
             Amount = request.Transaction.Amount,
