@@ -39,10 +39,9 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
 
         if (transaction is null)
             return;
-        
-        await Task.WhenAll(
-            ProcessNonCategorizedTransactionReport(context.Message),
-            ProcessCategorizedTransactionReport(context.Message));
+
+        await ProcessNonCategorizedTransactionReport(context.Message);
+        await ProcessCategorizedTransactionReport(context.Message);
 
         transaction.IsProceed = true;
         _transactionRepository.Update(transaction);
@@ -109,7 +108,7 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
                     p.Term == reportDate)
                 .ToListAsync();
 
-        foreach (var transactionLabel in domainEvent.Transaction.TransactionLabels)
+        foreach (var transactionLabel in domainEvent.Transaction.TransactionLabels.Where(tl => !tl.IsDeleted))
         {
             var categorizedTransactionReport =
                 categorizedTransactionReports.FirstOrDefault(p =>

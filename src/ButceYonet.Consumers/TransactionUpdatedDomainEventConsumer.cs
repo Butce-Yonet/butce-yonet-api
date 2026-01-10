@@ -37,14 +37,11 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
 
-        await Task.WhenAll(
-            ProcessNonCategorizedTransactionReport(context.Message.OldTransaction, true),
-            ProcessCategorizedTransactionReport(context.Message.OldTransaction, true)
-        );
-
-        await Task.WhenAll(
-            ProcessNonCategorizedTransactionReport(context.Message.NewTransaction, false),
-            ProcessCategorizedTransactionReport(context.Message.NewTransaction, false));
+        await ProcessNonCategorizedTransactionReport(context.Message.OldTransaction, true);
+        await ProcessCategorizedTransactionReport(context.Message.OldTransaction, true);
+        
+        await ProcessNonCategorizedTransactionReport(context.Message.NewTransaction, false);
+        await ProcessCategorizedTransactionReport(context.Message.NewTransaction, false);
 
         foreach (var nonCategorizedTransactionReport in _nonCategorizedTransactionReportDictionary.Values)
         {
@@ -69,6 +66,8 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
     {
         _nonCategorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>>();
         _categorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<CategorizedTransactionReport, ButceYonetDbContext>>();
+        _nonCategorizedTransactionReportDictionary = new ConcurrentDictionary<DateTime, NonCategorizedTransactionReport>();
+        _categorizedTransactionReportBag = new ConcurrentBag<CategorizedTransactionReport>();
     }
 
     private async Task ProcessNonCategorizedTransactionReport(Transaction transaction, bool isOldTransaction)
@@ -118,7 +117,7 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
         var transactionDate = transaction.TransactionDate;
         var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0,0);
         
-        foreach(var transactionLabel in transaction.TransactionLabels)
+        foreach(var transactionLabel in transaction.TransactionLabels.Where(tl => !tl.IsDeleted))
         {
             var categorizedTransactionReport = _categorizedTransactionReportBag
                 .Where(item =>

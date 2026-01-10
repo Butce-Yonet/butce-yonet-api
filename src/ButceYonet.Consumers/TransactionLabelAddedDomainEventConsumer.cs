@@ -26,8 +26,7 @@ public class TransactionLabelAddedDomainEventConsumer : BaseConsumer<Transaction
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
 
-        await Task.WhenAll(
-            ProcessCategorizedTransactionReport(context.Message));
+        await ProcessCategorizedTransactionReport(context.Message);
 
         await _categorizedTransactionReportRepository.SaveChangesAsync();
     }

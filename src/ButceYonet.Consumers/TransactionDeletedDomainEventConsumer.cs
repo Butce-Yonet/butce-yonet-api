@@ -36,9 +36,8 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
 
-        await Task.WhenAll(
-            ProcessNonCategorizedTransactionReport(context.Message),
-            ProcessCategorizedTransactionReport(context.Message));
+        await ProcessNonCategorizedTransactionReport(context.Message);
+        await ProcessCategorizedTransactionReport(context.Message);
 
         await _nonCategorizedTransactionReportRepository.SaveChangesAsync();
     }
@@ -98,7 +97,7 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
                 .Where(tl => tl.TransactionId == domainEvent.Transaction.Id)
                 .ToListAsync();
 
-        foreach (var transactionLabel in transactionLabels)
+        foreach (var transactionLabel in transactionLabels.Where(tl => !tl.IsDeleted))
         {
             var categorizedTransactionReport = categorizedTransactionReports
                 .Where(item => item.NotebookLabelId == transactionLabel.NotebookLabelId)

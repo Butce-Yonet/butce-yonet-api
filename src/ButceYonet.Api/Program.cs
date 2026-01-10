@@ -1,8 +1,11 @@
+using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using ButceYonet.Application.Infrastructure.Configuration;
 using DotBoil;
 using DotBoil.Configuration;
+using DotBoil.Entities;
 using DotBoil.Health;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -22,17 +25,17 @@ var dotboilAssemblies = new List<string>
     "DotBoil.Logging",
     "DotBoil.Mapper",
     "DotBoil.Validator",
-    "ButceYonet.Application",
     "DotBoil.EFCore",
     "DotBoil.MassTransit",
     "DotBoil.Swag",
-    "DotBoil.Health"
+    "DotBoil.Health",
+    "ButceYonet.Application"
 }.Select(assemblyName => Assembly.Load(assemblyName)).ToArray();
 
 await builder.AddDotBoil(dotboilAssemblies);
 
 var jwtOptions = DotBoilApp.Configuration.GetConfigurations<JwtOptions>();
-        
+
 DotBoilApp
     .Services
     .AddAuthentication(options =>
@@ -50,10 +53,39 @@ DotBoilApp
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtOptions.Issuer,
             ValidAudience = jwtOptions.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey))
+            ClockSkew = TimeSpan.Zero,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
+        };
+        options.Events = new JwtBearerEvents()
+        {
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                var response = BaseResponse.Response(
+                    new { },
+                    HttpStatusCode.Unauthorized);
+
+                return context.Response.WriteAsync(
+                    JsonSerializer.Serialize(response));
+            },
+            OnForbidden = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+
+                var response = BaseResponse.Response(
+                    new { },
+                    HttpStatusCode.Forbidden);
+
+                return context.Response.WriteAsync(
+                    JsonSerializer.Serialize(response));
+            }
         };
     });
-        
+
 DotBoilApp
     .Services
     .AddAuthorization();
@@ -67,7 +99,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

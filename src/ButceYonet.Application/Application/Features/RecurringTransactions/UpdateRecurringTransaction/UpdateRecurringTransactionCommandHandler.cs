@@ -17,6 +17,7 @@ public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurr
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
+    private readonly IRecurringTransactionIntervalsService _recurringTransactionIntervalsService;
     
     public UpdateRecurringTransactionCommandHandler(
         ICache cache, 
@@ -26,11 +27,13 @@ public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurr
         IParameterManager parameter, 
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository) 
+        IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository,
+        IRecurringTransactionIntervalsService recurringTransactionIntervalsService) 
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
         _recurringTransactionRepository = recurringTransactionRepository;
+        _recurringTransactionIntervalsService = recurringTransactionIntervalsService;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(UpdateRecurringTransactionCommand request, CancellationToken cancellationToken)
@@ -60,7 +63,7 @@ public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurr
         recurringTransaction.EndDate = request.EndDate;
         recurringTransaction.Frequency = request.Frequency;
         recurringTransaction.Interval = request.Interval;
-        recurringTransaction.NextOccurrence = request.NextOccurence;
+        recurringTransaction.NextOccurrence = _recurringTransactionIntervalsService.CalculateInterval(request.StartDate, request.Frequency, request.Interval);
         
         _recurringTransactionRepository.Update(recurringTransaction);
         await _recurringTransactionRepository.SaveChangesAsync();

@@ -2,11 +2,18 @@ using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Infrastructure.Data;
+using ButceYonet.Application.Infrastructure.MailTemplates;
+using DotBoil;
 using DotBoil.AuthGuard.Application.Domain.DomainEvents;
 using DotBoil.Caching;
+using DotBoil.Configuration;
 using DotBoil.EFCore;
+using DotBoil.Email;
+using DotBoil.Email.Configuration;
+using DotBoil.Email.Models;
 using DotBoil.MassTransit.Attributes;
 using DotBoil.MassTransit.Consumers;
+using DotBoil.TemplateEngine;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +27,8 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
     private IRepository<UserPlan, ButceYonetDbContext> _userPlanRepository;
     private IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
     private ICache _cache;
+    private IRazorRenderer _razorRenderer;
+    private IMailSender _mailSender;
     
     private readonly IServiceProvider _serviceProvider;
     
@@ -34,6 +43,7 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
         InitializeDependencies(scope);
         await InitializeUserPlan(context.Message);
         await InitializeNotebook(context.Message);
+        await SendWelcomeMail(context.Message);
     }
 
     private void InitializeDependencies(IServiceScope scope)
@@ -44,6 +54,8 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
         _userPlanRepository = scope.ServiceProvider.GetRequiredService<IRepository<UserPlan, ButceYonetDbContext>>();
         _notebookRepository = scope.ServiceProvider.GetRequiredService<IRepository<Notebook, ButceYonetDbContext>>();
         _cache = scope.ServiceProvider.GetRequiredService<ICache>();
+        _razorRenderer = scope.ServiceProvider.GetRequiredService<IRazorRenderer>();
+        _mailSender = scope.ServiceProvider.GetRequiredService<IMailSender>();
     }
 
     private async Task InitializeUserPlan(UserCreatedDomainEvent @event)
@@ -102,5 +114,29 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
         
         await _notebookRepository.AddAsync(notebook);
         await _notebookRepository.SaveChangesAsync();
+    }
+
+    private async Task SendWelcomeMail(UserCreatedDomainEvent @event)
+    {
+        var userCreatedMailTemplateModel = new UserCreatedMailTemplateModel
+        {
+            UserName = string.Format("{0} {1}", @event.Name, @event.Surname),
+            Year = DateTime.Now.Year
+        };
+
+        var mailContent = await _razorRenderer.RenderAsync("UserCreatedMailTemplate", userCreatedMailTemplateModel);
+        var mailConfiguration = DotBoilApp.Configuration.GetConfigurations<EmailOptions>();
+        var serverSettings = mailConfiguration.ServerSettings;
+        var serverSetting = serverSettings.FirstOrDefault();
+        
+        await _mailSender.SendAsync(serverSetting.Value, new Message()
+        {
+            From = new List<string>() { serverSetting.Value.EmailAddress },
+            To = new List<string>() { @event.Email },
+            Attachments = new List<Attachment>(),
+            Body = mailContent,
+            Subject = "Bütçe Yönet"
+        });
+
     }
 }

@@ -24,4 +24,15 @@
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Infrastructure\MailTemplates\UserCreatedMailTemplate.cshtml" />
+      <EmbeddedResource Include="Infrastructure\MailTemplates\UserCreatedMailTemplate.cshtml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Infrastructure\MailTemplates\ForgotPasswordOtpCodeCreatedTemplate.cshtml" />
+      <EmbeddedResource Include="Infrastructure\MailTemplates\ForgotPasswordOtpCodeCreatedTemplate.cshtml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+
 </Project>

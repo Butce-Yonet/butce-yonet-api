@@ -3,6 +3,7 @@ using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Application.Shared.UserPlanRuleValidators;
 using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Infrastructure;
+using ButceYonet.Application.Infrastructure.Jobs;
 using ButceYonet.Application.Infrastructure.Services;
 using DotBoil;
 using DotBoil.Dependency;
@@ -23,7 +24,7 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<IUser, User>();
         DotBoilApp.Services.AddScoped<IRecurringTransactionIntervalsService, RecurringTransactionIntervalsService>();
         DotBoilApp.Services.AddScoped<JwtAuthFilterAttribute>();
-
+        DotBoilApp.Services.AddHostedService<RecurringTransactionJob>();
         #region User Plan Rule Validators
 
         DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookCountRuleValidator>(PlanFeatures.NotebookCount

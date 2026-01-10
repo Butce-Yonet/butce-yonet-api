@@ -20,6 +20,7 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<NotebookLabel, ButceYonetDbContext> _notebookLabelRepository;
     private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
+    private readonly IRecurringTransactionIntervalsService _recurringTransactionIntervalsService;
     
     public CreateRecurringTransactionCommandHandler(
         ICache cache, 
@@ -30,12 +31,14 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<NotebookLabel, ButceYonetDbContext> notebookLabelRepository,
-        IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository)
+        IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository,
+        IRecurringTransactionIntervalsService recurringTransactionIntervalsService)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
         _notebookLabelRepository = notebookLabelRepository;
         _recurringTransactionRepository = recurringTransactionRepository;
+        _recurringTransactionIntervalsService = recurringTransactionIntervalsService;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(CreateRecurringTransactionCommand request, CancellationToken cancellationToken)
@@ -75,7 +78,7 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
             .Where(nl => request.Transaction.Labels.Contains(nl.Id))
             .Select(nl => new TransactionLabel
             {
-                NotebookLabelId = nl.NotebookId
+                NotebookLabelId = nl.Id
             }).ToList();
 
         transaction.IsMatched = transaction.TransactionLabels.Any();
@@ -90,7 +93,7 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
             EndDate = request.EndDate,
             Frequency = request.Frequency,
             Interval = request.Interval,
-            NextOccurrence = request.StartDate,
+            NextOccurrence = _recurringTransactionIntervalsService.CalculateInterval(request.StartDate, request.Frequency, request.Interval),
             StateData = JsonSerializer.Serialize(transactions)
         };
 
