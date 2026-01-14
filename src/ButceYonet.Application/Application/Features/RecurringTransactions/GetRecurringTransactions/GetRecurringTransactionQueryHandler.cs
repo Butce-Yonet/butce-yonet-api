@@ -79,7 +79,14 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
         var recurringTransactions = await
             _recurringTransactionRepository
                 .GetAll()
-                .Where(rt => rt.NotebookId == request.NotebookId)
+                .Where(rt => 
+                    rt.NotebookId == request.NotebookId &&
+                    (
+                        rt.EndDate.Value.Date > DateTime.Now.Date ||
+                        (rt.EndDate.Value.Date == DateTime.Now.Date &&
+                         rt.NextOccurrence.Value.Date <= DateTime.Now.Date)
+                    ))
+                .OrderBy(rt => rt.NextOccurrence.Value)
                 .PaginateAsync(paginationRequest);
 
         var currencies = await _currencyRepository.GetAll().ToListAsync();

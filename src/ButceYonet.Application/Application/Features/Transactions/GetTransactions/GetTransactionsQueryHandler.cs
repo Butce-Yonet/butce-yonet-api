@@ -72,6 +72,7 @@ public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, Bas
                 .Include(t => t.Currency)
                 .Include(t => t.TransactionLabels.Where(tl => !tl.IsDeleted))
                 .ThenInclude(tl => tl.NotebookLabel)
+                .OrderByDescending(t => t.TransactionDate)
                 .PaginateAsync(paginationRequest);
 
         var paginateItems = _mapper.Map<List<TransactionDto>>(transactions.Items);

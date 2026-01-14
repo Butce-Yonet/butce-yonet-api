@@ -1,6 +1,7 @@
 using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
+using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
@@ -55,6 +56,11 @@ public class DeleteNotebookLabelCommandHandler : BaseHandler<DeleteNotebookLabel
         notebookLabel.IsDeleted = true;
         _notebookLabelRepository.Update(notebookLabel);
         await _notebookLabelRepository.SaveChangesAsync();
+        
+        var notebookLabelCacheKey = CacheKeyConstants.NotebookLabels.Replace("{NotebookId}", request.NotebookId.ToString());
+
+        if (await _cache.KeyExistsAsync(notebookLabelCacheKey))
+            await _cache.RemoveAsync(notebookLabelCacheKey);
 
         return BaseResponse.Response(new { }, HttpStatusCode.OK);
     }

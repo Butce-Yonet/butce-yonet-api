@@ -2,6 +2,7 @@ using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Application.Shared.Dtos;
+using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Infrastructure.Data;
 using DotBoil.Caching;
@@ -32,13 +33,18 @@ public class GetNotebookLabelsQueryHandler : BaseHandler<GetNotebookLabelsQuery,
 
     public override async Task<BaseResponse> ExecuteRequest(GetNotebookLabelsQuery request, CancellationToken cancellationToken)
     {
-        var notebookLabels = await
-            _notebookLabelRepository
-                .GetAll()
-                .Where(nl => nl.NotebookId == request.NotebookId)
-                .ToListAsync();
+        var cacheKey = CacheKeyConstants.NotebookLabels.Replace("{NotebookId}", request.NotebookId.ToString());
+        var notebookLabelDtos = await _cache.GetOrSetAsync(cacheKey, async () =>
+        {
+            var notebookLabels = await
+                _notebookLabelRepository
+                    .GetAll()
+                    .Where(nl => nl.NotebookId == request.NotebookId)
+                    .OrderBy(nl => nl.Name)
+                    .ToListAsync();
 
-        var notebookLabelDtos = _mapper.Map<List<NotebookLabelDto>>(notebookLabels);
+            return _mapper.Map<List<NotebookLabelDto>>(notebookLabels);
+        }, CacheIntervalConstants.NotebookLabels);
 
         return BaseResponse.Response(notebookLabelDtos, HttpStatusCode.OK);
     }

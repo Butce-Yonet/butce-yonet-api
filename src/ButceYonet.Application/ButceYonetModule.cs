@@ -23,7 +23,6 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<IUserPlanValidator, UserPlanValidator>();
         DotBoilApp.Services.AddScoped<IUser, User>();
         DotBoilApp.Services.AddScoped<IRecurringTransactionIntervalsService, RecurringTransactionIntervalsService>();
-        DotBoilApp.Services.AddScoped<JwtAuthFilterAttribute>();
         DotBoilApp.Services.AddHostedService<RecurringTransactionJob>();
         #region User Plan Rule Validators
 

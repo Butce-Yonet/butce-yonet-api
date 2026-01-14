@@ -1,6 +1,7 @@
 using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
+using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Domain.Events;
@@ -96,6 +97,11 @@ public class CreateNotebookUserCommandHandler : BaseHandler<CreateNotebookUserCo
 
         await _notebookUserRepository.AddAsync(notebookUser);
         await _notebookUserRepository.SaveChangesAsync();
+        
+        var cacheKey = CacheKeyConstants.NotebookUsers.Replace("{NotebookId}", request.NotebookId.ToString());
+
+        if (await _cache.KeyExistsAsync(cacheKey))
+            await _cache.RemoveAsync(cacheKey);
         
         return BaseResponse.Response(new {}, HttpStatusCode.OK);
     }

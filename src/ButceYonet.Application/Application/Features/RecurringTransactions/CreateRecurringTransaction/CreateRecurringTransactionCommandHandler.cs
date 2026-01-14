@@ -93,7 +93,7 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
             EndDate = request.EndDate,
             Frequency = request.Frequency,
             Interval = request.Interval,
-            NextOccurrence = _recurringTransactionIntervalsService.CalculateInterval(request.StartDate, request.Frequency, request.Interval),
+            NextOccurrence = request.StartDate,
             StateData = JsonSerializer.Serialize(transactions)
         };
 

@@ -1,6 +1,7 @@
 using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
+using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Domain.Exceptions;
@@ -64,6 +65,11 @@ public class CreateNotebookLabelCommandHandler : BaseHandler<CreateNotebookLabel
 
         await _notebookLabelRepository.AddAsync(notebookLabel);
         await _notebookLabelRepository.SaveChangesAsync();
+        
+        var notebookLabelCacheKey = CacheKeyConstants.NotebookLabels.Replace("{NotebookId}", request.NotebookId.ToString());
+
+        if (await _cache.KeyExistsAsync(notebookLabelCacheKey))
+            await _cache.RemoveAsync(notebookLabelCacheKey);
 
         return BaseResponse.Response(new { }, HttpStatusCode.OK);
     }

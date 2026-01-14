@@ -1,6 +1,7 @@
 using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
+using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Domain.Exceptions;
@@ -64,6 +65,11 @@ public class DeleteNotebookUserCommandHandler : BaseHandler<DeleteNotebookUserCo
         notebookUser.IsDeleted = true;
         _notebookUserRepository.Update(notebookUser);
         await _notebookUserRepository.SaveChangesAsync();
+        
+        var cacheKey = CacheKeyConstants.NotebookUsers.Replace("{NotebookId}", request.NotebookId.ToString());
+
+        if (await _cache.KeyExistsAsync(cacheKey))
+            await _cache.RemoveAsync(cacheKey);
 
         return BaseResponse.Response(new {}, HttpStatusCode.OK);
     }

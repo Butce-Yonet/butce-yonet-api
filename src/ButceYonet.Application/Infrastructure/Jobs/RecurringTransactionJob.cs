@@ -42,7 +42,7 @@ public class RecurringTransactionJob : BackgroundService
                 _logger.LogError(ex, "Recurring transaction job timed out.");
             }
 
-            await Task.Delay(TimeSpan.FromDays(1), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
         }
     }
 
@@ -56,7 +56,7 @@ public class RecurringTransactionJob : BackgroundService
         var recurringTransactions = await recurringTransactionRepository
             .GetAll()
             .Where(rt =>
-                rt.EndDate > DateTime.Now &&
+                rt.EndDate.Value.Date >= DateTime.Now.Date &&
                 rt.NextOccurrence != null &&
                 rt.NextOccurrence.Value.Date <= DateTime.Now.Date)
             .ToListAsync();
@@ -86,7 +86,7 @@ public class RecurringTransactionJob : BackgroundService
                 Amount = firstTransaction.Amount,
                 CurrencyId = firstTransaction.CurrencyId,
                 TransactionType = firstTransaction.TransactionType,
-                TransactionDate = firstTransaction.TransactionDate
+                TransactionDate = DateTime.Now
             };
 
             transaction.TransactionLabels = new List<TransactionLabel>();

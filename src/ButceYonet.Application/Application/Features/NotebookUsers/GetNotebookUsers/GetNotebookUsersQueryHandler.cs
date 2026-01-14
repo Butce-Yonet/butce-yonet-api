@@ -2,6 +2,7 @@ using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Application.Shared.Dtos;
+using ButceYonet.Application.Domain.Constants;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
@@ -36,52 +37,59 @@ public class GetNotebookUsersQueryHandler : BaseHandler<GetNotebookUsersQuery, B
 
     public override async Task<BaseResponse> ExecuteRequest(GetNotebookUsersQuery request, CancellationToken cancellationToken)
     {
-        var currentUserIsMember =  await _notebookUserRepository
-            .Get()
-            .Where(nu =>
-                nu.NotebookId == request.NotebookId &&
-                nu.UserId == _user.Id)
-            .AnyAsync();
+        var cacheKey = CacheKeyConstants.NotebookUsers.Replace("{NotebookId}", request.NotebookId.ToString());
 
-        if (!currentUserIsMember)
-            throw new BusinessRuleException("Current user is not notebook user"); //TODO:
-        
-        var notebookUsers = await
-            _notebookUserRepository
+        var notebookUserDtos = await _cache.GetOrSetAsync(cacheKey, async () =>
+        {
+            var currentUserIsMember = await _notebookUserRepository
+                .Get()
+                .Where(nu =>
+                    nu.NotebookId == request.NotebookId &&
+                    nu.UserId == _user.Id)
+                .AnyAsync();
+
+            if (!currentUserIsMember)
+                throw new BusinessRuleException("Current user is not notebook user"); //TODO:
+
+            var notebookUsers = await
+                _notebookUserRepository
+                    .GetAll()
+                    .Where(nu => nu.NotebookId == request.NotebookId)
+                    .ToListAsync();
+
+            var userIds = notebookUsers
+                .Select(nu => nu.UserId)
+                .ToList();
+
+            var users = await _userRepository
                 .GetAll()
-                .Where(nu => nu.NotebookId == request.NotebookId)
+                .Where(u => userIds.Contains(u.Id))
                 .ToListAsync();
 
-        var userIds = notebookUsers
-            .Select(nu => nu.UserId)
-            .ToList();
+            var items = new List<NotebookUserDto>();
 
-        var users = await _userRepository
-            .GetAll()
-            .Where(u => userIds.Contains(u.Id))
-            .ToListAsync();
-
-        var notebookUserDtos = new List<NotebookUserDto>();
-
-        foreach (var notebookUser in notebookUsers)
-        {
-            var user = users.FirstOrDefault(u => u.Id == notebookUser.UserId);
-            
-            if (user is null) 
-                continue;
-            
-            var userDto = _mapper.Map<UserDto>(user);
-            var notebookUserDto = new NotebookUserDto
+            foreach (var notebookUser in notebookUsers)
             {
-                Id = notebookUser.Id,
-                UserId = notebookUser.UserId,
-                NotebookId = notebookUser.NotebookId,
-                IsDefault = notebookUser.IsDefault,
-                User = userDto
-            };
-            
-            notebookUserDtos.Add(notebookUserDto);
-        }
+                var user = users.FirstOrDefault(u => u.Id == notebookUser.UserId);
+
+                if (user is null)
+                    continue;
+
+                var userDto = _mapper.Map<UserDto>(user);
+                var notebookUserDto = new NotebookUserDto
+                {
+                    Id = notebookUser.Id,
+                    UserId = notebookUser.UserId,
+                    NotebookId = notebookUser.NotebookId,
+                    IsDefault = notebookUser.IsDefault,
+                    User = userDto
+                };
+
+                items.Add(notebookUserDto);
+            }
+
+            return items;
+        }, CacheIntervalConstants.NotebookUsers);
 
         return BaseResponse.Response(notebookUserDtos, HttpStatusCode.OK);
     }

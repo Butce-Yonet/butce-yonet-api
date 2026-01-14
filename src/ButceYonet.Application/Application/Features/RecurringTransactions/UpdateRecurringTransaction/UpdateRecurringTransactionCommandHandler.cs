@@ -59,7 +59,10 @@ public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurr
 
         recurringTransaction.Name = request.Name;
         recurringTransaction.Description = request.Description;
-        recurringTransaction.StartDate = request.StartDate;
+
+        if (recurringTransaction.StartDate.Date > DateTime.Now.Date)
+            recurringTransaction.StartDate = request.StartDate;
+        
         recurringTransaction.EndDate = request.EndDate;
         recurringTransaction.Frequency = request.Frequency;
         recurringTransaction.Interval = request.Interval;

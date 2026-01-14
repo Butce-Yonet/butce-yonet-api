@@ -18,7 +18,7 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
     private IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
     private IRepository<CategorizedTransactionReport, ButceYonetDbContext> _categorizedTransactionReportRepository;
 
-    private ConcurrentDictionary<DateTime, NonCategorizedTransactionReport> _nonCategorizedTransactionReportDictionary;
+    private ConcurrentBag<NonCategorizedTransactionReport> _nonCategorizedTransactionReportBag;
     private ConcurrentBag<CategorizedTransactionReport> _categorizedTransactionReportBag;
     
     public TransactionUpdatedDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
@@ -43,7 +43,7 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
         await ProcessNonCategorizedTransactionReport(context.Message.NewTransaction, false);
         await ProcessCategorizedTransactionReport(context.Message.NewTransaction, false);
 
-        foreach (var nonCategorizedTransactionReport in _nonCategorizedTransactionReportDictionary.Values)
+        foreach (var nonCategorizedTransactionReport in _nonCategorizedTransactionReportBag)
         {
             if (nonCategorizedTransactionReport.Id == default(int))
                 await _nonCategorizedTransactionReportRepository.AddAsync(nonCategorizedTransactionReport);
@@ -66,7 +66,7 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
     {
         _nonCategorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>>();
         _categorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<CategorizedTransactionReport, ButceYonetDbContext>>();
-        _nonCategorizedTransactionReportDictionary = new ConcurrentDictionary<DateTime, NonCategorizedTransactionReport>();
+        _nonCategorizedTransactionReportBag = new ConcurrentBag<NonCategorizedTransactionReport>();
         _categorizedTransactionReportBag = new ConcurrentBag<CategorizedTransactionReport>();
     }
 
@@ -77,11 +77,15 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
         
         var nonCategorizedTransactionReport = default(NonCategorizedTransactionReport);
 
-        if (_nonCategorizedTransactionReportDictionary.ContainsKey(reportDate))
-        {
-            nonCategorizedTransactionReport = _nonCategorizedTransactionReportDictionary[reportDate];
-        }
-        else
+        nonCategorizedTransactionReport = _nonCategorizedTransactionReportBag
+            .Where(item =>
+                item.NotebookId == transaction.NotebookId &&
+                item.TransactionType == transaction.TransactionType &&
+                item.CurrencyId == transaction.CurrencyId &&
+                item.Term == reportDate)
+            .FirstOrDefault();
+        
+        if (nonCategorizedTransactionReport is null)
         {
             nonCategorizedTransactionReport = await _nonCategorizedTransactionReportRepository
                 .Get()
@@ -103,7 +107,7 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
                 };
             }
             
-            _nonCategorizedTransactionReportDictionary.TryAdd(reportDate, nonCategorizedTransactionReport);
+            _nonCategorizedTransactionReportBag.Add(nonCategorizedTransactionReport);
         }
         
         if (isOldTransaction)

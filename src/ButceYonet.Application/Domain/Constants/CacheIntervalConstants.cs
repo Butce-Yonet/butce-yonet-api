@@ -7,4 +7,6 @@ public class CacheIntervalConstants
     public static TimeSpan Plans => TimeSpan.FromDays(1);
     public static TimeSpan Currencies => TimeSpan.FromDays(1);
     public static TimeSpan CurrentUserPlan => TimeSpan.FromHours(1);
+    public static TimeSpan NotebookLabels => TimeSpan.FromDays(1);
+    public static TimeSpan NotebookUsers => TimeSpan.FromDays(1);
 }
