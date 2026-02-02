@@ -1,0 +1,28 @@
+# ButceYonet API – Cursor Kuralları
+
+Bu proje .NET 10 tabanlı bir bütçe yönetim API'sidir. Detaylı kurallar için `.cursor/rules/` altındaki .mdc dosyalarına bakın.
+
+## Proje Yapısı
+- ButceYonet.Application: Domain, Application (Features/CQRS), Infrastructure
+- ButceYonet.Api: REST API (MediatR, BaseController, BaseResponse)
+- ButceYonet.Auth: Kimlik doğrulama (MVC)
+- ButceYonet.Consumers: MassTransit domain event consumer'ları
+
+## C# / Application
+- Yeni özellikler Features/{FeatureName}/{Action}/ altında: Query/Command, Handler, Validator
+- Handler'lar BaseHandler<TRequest, TResponse> kullanır; ExecuteRequest override edilir
+- FluentValidation ile AbstractValidator<T>; DotBoil.Entities (BaseResponse, PaginationFilter)
+- Entity mapping: Infrastructure/Data/EntityTypeConfiguration; Domain event'ler Domain/Events
+
+## API
+- Controller'lar BaseController'dan türer; _mediator.Send(request) ve Response(response)
+- Route: api/[controller] veya api/notebooks/{notebookId}/...
+- ProducesResponseType ve XML doc (summary, param, returns) kullan
+
+## Consumers
+- [Consumer("queue-name")] ve BaseConsumer<TEvent>; ConsumeEvent override
+- Scope için IServiceProvider.CreateScope ve InitializeDependencies pattern
+
+## İsimlendirme
+- Namespace: ButceYonet.{Proje}.{Klasör}
+- Domain event: {Entity}{Action}DomainEvent; Queue adı kebab-case

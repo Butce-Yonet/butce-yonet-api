@@ -27,8 +27,10 @@ var dotboilAssemblies = new List<string>
     "DotBoil.Validator",
     "DotBoil.EFCore",
     "DotBoil.MassTransit",
+    "DotBoil.TemplateEngine",
     "DotBoil.Swag",
     "DotBoil.Health",
+    "DotBoil.Email",
     "ButceYonet.Application"
 }.Select(assemblyName => Assembly.Load(assemblyName)).ToArray();
 

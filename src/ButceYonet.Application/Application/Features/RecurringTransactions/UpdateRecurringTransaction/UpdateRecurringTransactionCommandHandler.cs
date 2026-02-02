@@ -57,6 +57,10 @@ public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurr
         if (recurringTransaction is null)
             throw new NotFoundException(typeof(RecurringTransaction));
 
+        var originalStartDate = recurringTransaction.StartDate;
+        var originalFrequency = recurringTransaction.Frequency;
+        var originalInterval = recurringTransaction.Interval;
+
         recurringTransaction.Name = request.Name;
         recurringTransaction.Description = request.Description;
 
@@ -66,7 +70,12 @@ public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurr
         recurringTransaction.EndDate = request.EndDate;
         recurringTransaction.Frequency = request.Frequency;
         recurringTransaction.Interval = request.Interval;
-        recurringTransaction.NextOccurrence = _recurringTransactionIntervalsService.CalculateInterval(request.StartDate, request.Frequency, request.Interval);
+
+        var scheduleChanged = originalStartDate != request.StartDate
+            || originalFrequency != request.Frequency
+            || originalInterval != request.Interval;
+        if (scheduleChanged)
+            recurringTransaction.NextOccurrence = _recurringTransactionIntervalsService.CalculateInterval(request.StartDate, request.Frequency, request.Interval);
         
         _recurringTransactionRepository.Update(recurringTransaction);
         await _recurringTransactionRepository.SaveChangesAsync();

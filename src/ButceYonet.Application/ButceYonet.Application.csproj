@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -31,6 +31,10 @@
       </EmbeddedResource>
       <None Remove="Infrastructure\MailTemplates\ForgotPasswordOtpCodeCreatedTemplate.cshtml" />
       <EmbeddedResource Include="Infrastructure\MailTemplates\ForgotPasswordOtpCodeCreatedTemplate.cshtml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Infrastructure\MailTemplates\RecurringTransactionsProcessedTemplate.cshtml" />
+      <EmbeddedResource Include="Infrastructure\MailTemplates\RecurringTransactionsProcessedTemplate.cshtml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </EmbeddedResource>
     </ItemGroup>

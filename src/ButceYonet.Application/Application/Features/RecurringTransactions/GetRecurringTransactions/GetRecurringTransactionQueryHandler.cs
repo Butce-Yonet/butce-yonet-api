@@ -76,17 +76,16 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
             int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageNumber"].ToString()),
             int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageSize"].ToString()));
         
+        var today = DateTime.UtcNow.Date;
+
+        // Bitmemiş recurring transaction'lar: EndDate yok (sonsuz) veya EndDate bugün/sonrası
         var recurringTransactions = await
             _recurringTransactionRepository
                 .GetAll()
-                .Where(rt => 
+                .Where(rt =>
                     rt.NotebookId == request.NotebookId &&
-                    (
-                        rt.EndDate.Value.Date > DateTime.Now.Date ||
-                        (rt.EndDate.Value.Date == DateTime.Now.Date &&
-                         rt.NextOccurrence.Value.Date <= DateTime.Now.Date)
-                    ))
-                .OrderBy(rt => rt.NextOccurrence.Value)
+                    (!rt.EndDate.HasValue || rt.EndDate.Value.Date >= today))
+                .OrderBy(rt => rt.NextOccurrence ?? DateTime.MaxValue)
                 .PaginateAsync(paginationRequest);
 
         var currencies = await _currencyRepository.GetAll().ToListAsync();

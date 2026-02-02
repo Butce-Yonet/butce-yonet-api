@@ -1,0 +1,46 @@
+---
+description: Application katmanı – Features (CQRS), Handler, Validator, Entity, EF Core
+globs: src/ButceYonet.Application/**/*.cs
+alwaysApply: false
+---
+
+# ButceYonet.Application – C# ve Feature Kuralları
+
+## Feature (CQRS) Yapısı
+
+Her özellik `Application/Features/{FeatureName}/` altında, işleme göre alt klasörde toplanır:
+
+- **Query**: `Get{Entity}`, `Get{Entity}s` → `GetXxxQuery.cs`, `GetXxxQueryHandler.cs`, `GetXxxQueryValidator.cs`
+- **Command**: `CreateXxx`, `UpdateXxx`, `DeleteXxx` → `XxxCommand.cs`, `XxxCommandHandler.cs`, `XxxCommandValidator.cs`
+
+Örnek: `Features/Transactions/GetTransactions/`, `Features/Transactions/CreateTransaction/`.
+
+- Query: `IRequest<BaseResponse>` veya `IRequest<BaseResponse<TPayload>>`; sayfalama için `PaginationFilter`’dan türet.
+- Command: `IRequest<BaseResponse>`.
+- Handler: `BaseHandler<TRequest, TResponse>`’dan türe; `ExecuteRequest` override edilir. Constructor’da `IRepository<TEntity, ButceYonetDbContext>`, `IMapper`, `IUser`, `IUserPlanValidator` vb. inject et.
+- Validator: FluentValidation `AbstractValidator<T>`; `RuleFor` ile kurallar tanımlanır.
+
+## Domain
+
+- **Entities**: `Domain/Entities/`; DotBoil `BaseEntity`’den türe. Navigation property’ler `virtual`; koleksiyonlar constructor’da initialize edilir.
+- **Events**: `Domain/Events/`; `[Queue("event-name")]` ve `IEvent`. Event adı queue ile uyumlu (kebab-case).
+- **Exceptions**: `Domain/Exceptions/`; iş kuralları için `BusinessRuleException`, bulunamayan kayıt için `NotFoundException` vb. kullan.
+- **Enums**: `Domain/Enums/`.
+
+## Infrastructure
+
+- **Data**: Entity mapping `Infrastructure/Data/EntityTypeConfiguration/`; `[DotBoilEntityTypeConfiguration(typeof(ButceYonetDbContext))]`, `EFCoreEntityTypeConfiguration<T>`, `ConfigureDotBoilEntity`. Tablo adı `ToTable("TableName")` ile verilir.
+- **Repositories**: `IRepository<TEntity, ButceYonetDbContext>` kullan; `Get()`, `GetAll()`, `AddAsync`, `Update`, `SaveChangesAsync` vb.
+
+## Shared (Application)
+
+- **Dtos**: `Application/Shared/Dtos/`; API yanıt modelleri.
+- **Profiles**: AutoMapper `Profile`; Entity → Dto mapping, `ForMember` ile alan eşlemesi.
+
+## Örnek Sıra
+
+1. Notebook kullanıcı / yetki kontrolü (örn. `NotebookUser` ile).
+2. Plan limit validasyonu: `_userPlanValidator.Validate(PlanFeatures.Xxx, parameters)`.
+3. İş mantığı ve repository çağrıları.
+4. Domain event varsa entity’ye `AddEvent` ile ekle; `SaveChangesAsync` sonrası event’ler publish edilir.
+5. Yanıt: `BaseResponse.Response(payload, HttpStatusCode.OK)` veya `PaginatedModel<T>` ile sayfalı yanıt.

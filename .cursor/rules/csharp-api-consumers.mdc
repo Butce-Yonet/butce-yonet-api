@@ -1,0 +1,34 @@
+---
+description: API Controller ve MassTransit Consumer kuralları
+globs: src/ButceYonet.Api/**/*.cs, src/ButceYonet.Consumers/**/*.cs
+alwaysApply: false
+---
+
+# ButceYonet.Api ve ButceYonet.Consumers
+
+## API Controller
+
+- Tüm controller’lar `BaseController`’dan türemeli; `IMediator` constructor’da alınır ve `base(mediator)` ile iletilir.
+- Route: `[Route("api/[controller]")]` veya nested için `[Route("api/notebooks/{notebookId}/transactions")]` gibi.
+- `[Authorize]` sınıf seviyesinde; gerekirse action’da `[AllowAnonymous]`.
+- Action’lar: Query/Command’ı `_mediator.Send(request)` ile gönder; yanıtı `Response(response)` ile döndür (BaseController’daki `Response(BaseResponse)` kullanılır).
+- XML doc: `/// <summary>`, `/// <param>`, `/// <returns>`; `[ProducesResponseType(typeof(BaseResponse<...>), StatusCodes.Status200OK)]` ve 400/401/403/404 için uygun tipler.
+
+Örnek:
+
+```csharp
+[HttpGet]
+public async Task<IActionResult> List(int notebookId, [FromQuery] GetTransactionsQuery request)
+{
+    request.NotebookId = notebookId;
+    var response = await _mediator.Send(request);
+    return Response(response);
+}
+```
+
+## Consumers
+
+- Sınıf: `[Consumer("event-queue-name")]`; queue adı Domain Event’teki `[Queue("...")]` ile aynı olmalı.
+- `BaseConsumer<TEvent>`’dan türe; `ConsumeEvent(ConsumeContext<TEvent> context)` override edilir.
+- DbContext/Repository kullanımı: `IServiceProvider.CreateScope()` ile scope al; scope içinde `InitializeDependencies(scope)` ile repository’leri resolve et (scoped DbContext için).
+- İşlem sonunda gerekirse entity güncelle ve ilgili repository’nin `SaveChangesAsync` çağrısı yapılır.

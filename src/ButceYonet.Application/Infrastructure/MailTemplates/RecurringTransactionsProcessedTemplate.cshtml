@@ -1,0 +1,61 @@
+@model ButceYonet.Application.Infrastructure.MailTemplates.RecurringTransactionsProcessedTemplateModel
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f7fb;">
+    <tr>
+        <td>
+            <table width="650" cellpadding="0" cellspacing="0" align="center" style="margin-bottom:30px;">
+                <tr>
+                    <td align="center">
+                        <h2 style="margin:0; color:#22c55e;"> Bütçe Yönet </h2>
+                    </td>
+                </tr>
+            </table>
+            <table width="650" cellpadding="0" cellspacing="0" align="center" style="background-color:#ffffff; border-radius:8px;">
+                <tr>
+                    <td style="padding:30px; color:#333333; font-size:13px; line-height:1.7; letter-spacing:0.5px;">
+                        <p style="margin-top:0;">Merhaba <strong>@Model.UserName</strong>,</p>
+                        <p>
+                            <strong>@Model.ProcessedDate.ToString("dd.MM.yyyy")</strong> tarihinde planlanan tekrarlayan gelir-gider kayıtlarınız işlendi.
+                        </p>
+                        @if (Model.Items.Any())
+                        {
+                            <p>Aşağıdaki tekrarlayan gelir-gider kalemleri defterinize eklenmiştir:</p>
+                            <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:6px; margin:15px 0;">
+                                <tr style="background-color:#f9fafb;">
+                                    <td style="font-weight:bold; border-bottom:1px solid #e5e7eb;">Kalem</td>
+                                    <td style="font-weight:bold; border-bottom:1px solid #e5e7eb;">Tür</td>
+                                    <td style="font-weight:bold; border-bottom:1px solid #e5e7eb;">Açıklama</td>
+                                    <td style="font-weight:bold; border-bottom:1px solid #e5e7eb; text-align:right;">Tutar</td>
+                                </tr>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td style="border-bottom:1px solid #f3f4f6;">@item.Name</td>
+                                        <td style="border-bottom:1px solid #f3f4f6;">
+                                            <span style="color:@(item.IsIncome ? "#16a34a" : "#dc2626"); font-weight:500;">@item.TransactionTypeDisplay</span>
+                                        </td>
+                                        <td style="border-bottom:1px solid #f3f4f6; font-size:12px; color:#6b7280;">@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td>
+                                        <td style="border-bottom:1px solid #f3f4f6; text-align:right; font-weight:500; color:@(item.IsIncome ? "#16a34a" : "#dc2626");">
+                                            @(item.IsSymbolRight ? item.Amount.ToString("N2") + " " + item.CurrencySymbol : item.CurrencySymbol + " " + item.Amount.ToString("N2"))
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                        }
+                        <p style="margin-bottom:0;">
+                            Detayları uygulama üzerinden görüntüleyebilirsiniz.<br>
+                            <strong>Bütçe Yönet Ekibi</strong>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <table width="650" cellpadding="0" cellspacing="0" align="center" style="margin-top:30px;">
+                <tr>
+                    <td align="center" style="font-size:12px; color:#999999;">
+                        <p style="margin-bottom:4px;"> © @Model.Year Bütçe Yönet </p>
+                        <p style="margin-bottom:0;"> Bu e-posta otomatik olarak gönderilmiştir. </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
