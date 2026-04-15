@@ -1,11 +1,14 @@
 using ButceYonet.Application.Application;
 using ButceYonet.Application.Application.Interfaces;
+using ButceYonet.Application.Application.Shared.Profiles;
 using ButceYonet.Application.Application.Shared.UserPlanRuleValidators;
 using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Infrastructure;
+using ButceYonet.Application.Infrastructure.Configuration;
 using ButceYonet.Application.Infrastructure.Jobs;
 using ButceYonet.Application.Infrastructure.Services;
 using DotBoil;
+using DotBoil.Configuration;
 using DotBoil.Dependency;
 using DotBoil.EFCore;
 using DotBoil.Localization;
@@ -16,8 +19,17 @@ namespace ButceYonet.Application;
 
 public class ButceYonetModule : Module
 {
+    public override string Name { get; } = "ButceYonetModule";
+
+    public override IEnumerable<string> DependsOn { get; } = new List<string>()
+    {
+    };
+
+    public override int Order { get; } = 99;
+    
     public override Task AddModule()
     {
+        DotBoilApp.Services.AddSingleton(typeof(ButceYonetConfiguration), DotBoilApp.Configuration.GetConfigurations<ButceYonetConfiguration>());
         DotBoilApp.Services.AddScoped<IAuditUser, CurrentUser>();
         DotBoilApp.Services.AddScoped<ICurrentLanguage, CurrentLanguage>();
         DotBoilApp.Services.AddScoped<IUserPlanValidator, UserPlanValidator>();
@@ -42,6 +54,9 @@ public class ButceYonetModule : Module
             .ToString());
 
         #endregion
+        
+        DotBoilApp.Services.AddTransient<RecurringTransactionProfile.NotebookResolver>();
+        DotBoilApp.Services.AddTransient<RecurringTransactionProfile.TransactionResolver>();
         
         return Task.CompletedTask;
     }

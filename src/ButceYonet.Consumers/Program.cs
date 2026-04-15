@@ -1,37 +1,29 @@
 using System.Reflection;
-using ButceYonet.Application.Infrastructure.MailTemplates;
 using DotBoil;
-using DotBoil.Configuration;
-using DotBoil.Email;
-using DotBoil.Email.Configuration;
-using DotBoil.Email.Models;
-using DotBoil.TemplateEngine;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var dotboilAssemblies = new List<string>
-{
-    "DotBoil",
-    "DotBoil.Cors",
-    "DotBoil.Localization",
-    "DotBoil.Parameter",
-    "DotBoil.Caching",
-    "DotBoil.Logging",
-    "DotBoil.Mapper",
-    "DotBoil.Validator",
-    "DotBoil.MassTransit",
-    "DotBoil.TemplateEngine",
-    "DotBoil.Email",
-    "ButceYonet.Application",
-    "DotBoil.EFCore",
-}.Select(assemblyName => Assembly.Load(assemblyName)).ToArray();
-
-await builder.AddDotBoil(dotboilAssemblies);
+PreloadAssemblies("DotBoil");
+PreloadAssemblies("ButceYonet");
+await builder.AddDotBoil();
 
 var app = builder.Build();
 
-await app.UseDotBoil(dotboilAssemblies);
+await app.UseDotBoil();
 
 app.UseHttpsRedirection();
 
 app.Run();
+
+static void PreloadAssemblies(string prefix)
+{
+    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+    
+    foreach (var dll in Directory.GetFiles(baseDir, $"{prefix}.*.dll"))
+    {
+        var name = AssemblyName.GetAssemblyName(dll);
+        
+        if (AppDomain.CurrentDomain.GetAssemblies().All(a => a.FullName != name.FullName))
+            Assembly.Load(name);
+    }
+}

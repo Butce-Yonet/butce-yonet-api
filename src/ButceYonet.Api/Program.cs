@@ -6,35 +6,14 @@ using ButceYonet.Application.Infrastructure.Configuration;
 using DotBoil;
 using DotBoil.Configuration;
 using DotBoil.Entities;
-using DotBoil.Health;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-var dotboilAssemblies = new List<string>
-{
-    "DotBoil",
-    "DotBoil.Cors",
-    "DotBoil.Localization",
-    "DotBoil.Parameter",
-    "DotBoil.Caching",
-    "DotBoil.Logging",
-    "DotBoil.Mapper",
-    "DotBoil.Validator",
-    "DotBoil.EFCore",
-    "DotBoil.MassTransit",
-    "DotBoil.TemplateEngine",
-    "DotBoil.Swag",
-    "DotBoil.Health",
-    "DotBoil.Email",
-    "ButceYonet.Application"
-}.Select(assemblyName => Assembly.Load(assemblyName)).ToArray();
-
-await builder.AddDotBoil(dotboilAssemblies);
+await builder.AddDotBoil();
 
 var jwtOptions = DotBoilApp.Configuration.GetConfigurations<JwtOptions>();
 
@@ -94,7 +73,7 @@ DotBoilApp
 
 var app = builder.Build();
 
-await app.UseDotBoil(dotboilAssemblies);
+await app.UseDotBoil();
 
 if (app.Environment.IsDevelopment())
 {

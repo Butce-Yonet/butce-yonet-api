@@ -22,7 +22,7 @@ public class RecurringTransactionProfile : Profile
             .ForMember(p => p.Transaction, p => p.MapFrom<TransactionResolver>());
     }
 
-    class NotebookResolver : IValueResolver<RecurringTransaction, RecurringTransactionDto, NotebookDto>
+    public class NotebookResolver : IValueResolver<RecurringTransaction, RecurringTransactionDto, NotebookDto>
     {
         public NotebookDto Resolve(RecurringTransaction source, RecurringTransactionDto destination,
             NotebookDto destMember,
@@ -47,7 +47,7 @@ public class RecurringTransactionProfile : Profile
         }
     }
 
-    class TransactionResolver : IValueResolver<RecurringTransaction, RecurringTransactionDto, TransactionDto>
+    public class TransactionResolver : IValueResolver<RecurringTransaction, RecurringTransactionDto, TransactionDto>
     {
         public TransactionDto Resolve(RecurringTransaction source, RecurringTransactionDto destination,
             TransactionDto destMember,
