@@ -38,7 +38,7 @@ public class GetCurrencyHandler : BaseHandler<GetCurrencyQuery, BaseResponse>
         {
             var items = await _currencyRepository
                 .GetAll()
-                .OrderBy(c => c.Name)
+                .OrderBy(c => c.Rank)
                 .ToListAsync();
             
             return _mapper.Map<List<CurrencyDto>>(items);

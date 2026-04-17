@@ -84,7 +84,7 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
                 .GetAll()
                 .Where(rt =>
                     rt.NotebookId == request.NotebookId &&
-                    (!rt.EndDate.HasValue || rt.EndDate.Value.Date >= today))
+                    (!rt.EndDate.HasValue || rt.EndDate.Value.Date > today))
                 .OrderBy(rt => rt.NextOccurrence ?? DateTime.MaxValue)
                 .PaginateAsync(paginationRequest);
 

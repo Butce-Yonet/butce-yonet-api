@@ -7,4 +7,5 @@ public class CurrencyDto
     public string Name { get; set; }
     public string Symbol { get; set; }
     public bool IsSymbolRight { get; set; }
+    public int Rank { get; set; }
 }

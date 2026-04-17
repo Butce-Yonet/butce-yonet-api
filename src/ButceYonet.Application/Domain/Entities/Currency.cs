@@ -8,6 +8,7 @@ public class Currency : BaseEntity
     public string Name { get; set; }
     public string Symbol { get; set; }
     public bool IsSymbolRight { get; set; }
+    public int Rank { get; set; }
     
     public virtual ICollection<Transaction> Transactions { get; set; }
     public virtual ICollection<CategorizedTransactionReport> CategorizedTransactionReports { get; set; }

@@ -66,39 +66,20 @@ public class GetCategorizedTransactionReportQueryHandler : BaseHandler<GetCatego
                     .Include(ctr => ctr.Currency)
                     .ToListAsync();
 
-            var grouped = reportItems
+            var responseModel = reportItems
                 .GroupBy(ctr => new { ctr.NotebookLabelId, ctr.CurrencyId, ctr.Term.Year, ctr.Term.Month })
-                .Select(g => new
+                .Select(g =>
                 {
-                    g.Key.Year,
-                    g.Key.Month,
-                    g.Key.NotebookLabelId,
-                    g.Key.CurrencyId,
-                    Amount = g.Sum(x => x.Amount),
-                    First = g.First()
-                })
-                .ToList();
-
-            var responseModel = grouped
-                .GroupBy(g => new { g.NotebookLabelId, g.CurrencyId })
-                .SelectMany(g =>
-                {
-                    decimal cumulative = 0;
-                    return g.OrderBy(x => x.Year).ThenBy(x => x.Month)
-                        .Select(x =>
-                        {
-                            cumulative += x.Amount;
-                            var s = x.First;
-                            return new CategorizedTransactionReportDto
-                            {
-                                Notebook = new NotebookDto { Id = s.Notebook.Id, Name = s.Notebook.Name, IsDefault = s.Notebook.IsDefault },
-                                NotebookLabel = new NotebookLabelDto { Id = s.NotebookLabel.Id, Name = s.NotebookLabel.Name, ColorCode = s.NotebookLabel.ColorCode },
-                                TransactionType = s.TransactionType,
-                                Currency = new CurrencyDto { Id = s.Currency.Id, Code = s.Currency.Code, Name = s.Currency.Name, Symbol = s.Currency.Symbol, IsSymbolRight = s.Currency.IsSymbolRight },
-                                Amount = cumulative,
-                                Term = new DateTime(x.Year, x.Month, 1)
-                            };
-                        });
+                    var s = g.First();
+                    return new CategorizedTransactionReportDto
+                    {
+                        Notebook = new NotebookDto { Id = s.Notebook.Id, Name = s.Notebook.Name, IsDefault = s.Notebook.IsDefault },
+                        NotebookLabel = new NotebookLabelDto { Id = s.NotebookLabel.Id, Name = s.NotebookLabel.Name, ColorCode = s.NotebookLabel.ColorCode },
+                        TransactionType = s.TransactionType,
+                        Currency = new CurrencyDto { Id = s.Currency.Id, Code = s.Currency.Code, Name = s.Currency.Name, Symbol = s.Currency.Symbol, IsSymbolRight = s.Currency.IsSymbolRight, Rank = s.Currency.Rank },
+                        Amount = g.Sum(x => x.Amount),
+                        Term = new DateTime(g.Key.Year, g.Key.Month, 1)
+                    };
                 })
                 .OrderBy(x => x.Term)
                 .ToList();

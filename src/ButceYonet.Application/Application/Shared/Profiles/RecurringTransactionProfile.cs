@@ -95,7 +95,8 @@ public class RecurringTransactionProfile : Profile
                     Code = currency.Code,
                     IsSymbolRight = currency.IsSymbolRight,
                     Name = currency.Name,
-                    Symbol = currency.Symbol
+                    Symbol = currency.Symbol,
+                    Rank = currency.Rank
                 },
                 Labels = new List<NotebookLabelDto>()
             };

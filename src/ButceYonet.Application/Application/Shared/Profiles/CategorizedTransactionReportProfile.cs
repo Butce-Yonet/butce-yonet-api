@@ -65,7 +65,8 @@ public class CategorizedTransactionReportProfile : Profile
                 Code = source.Currency.Code,
                 Name = source.Currency.Name,
                 Symbol = source.Currency.Symbol,
-                IsSymbolRight = source.Currency.IsSymbolRight
+                IsSymbolRight = source.Currency.IsSymbolRight,
+                Rank = source.Currency.Rank
             };
         }
     }

@@ -89,7 +89,7 @@ public class GetNonCategorizedTransactionReportQueryHandler : BaseHandler<GetNon
                             {
                                 NotebookDto = new NotebookDto { Id = s.Notebook.Id, Name = s.Notebook.Name, IsDefault = s.Notebook.IsDefault },
                                 TransactionTypes = s.TransactionType,
-                                Currency = new CurrencyDto { Id = s.Currency.Id, Code = s.Currency.Code, Name = s.Currency.Name, Symbol = s.Currency.Symbol, IsSymbolRight = s.Currency.IsSymbolRight },
+                                Currency = new CurrencyDto { Id = s.Currency.Id, Code = s.Currency.Code, Name = s.Currency.Name, Symbol = s.Currency.Symbol, IsSymbolRight = s.Currency.IsSymbolRight, Rank = s.Currency.Rank },
                                 Amount = cumulative,
                                 Term = new DateTime(x.Year, x.Month, 1)
                             };
