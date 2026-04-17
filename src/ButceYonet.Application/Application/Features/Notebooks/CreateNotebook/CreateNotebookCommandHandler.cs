@@ -38,7 +38,12 @@ public class CreateNotebookCommandHandler : BaseHandler<CreateNotebookCommand, B
 
         var notebookIsExists = await _notebookRepository
             .Get()
-            .AnyAsync(n => n.Name == request.Name);
+            .AnyAsync(n => 
+                n.Name == request.Name &&
+                n.NotebookUsers.Any(nu => 
+                    nu.NotebookId == n.Id && 
+                    nu.UserId == _user.Id && 
+                    !nu.IsDeleted));
 
         if (notebookIsExists)
             throw new AlreadyExistsException(typeof(Notebook));

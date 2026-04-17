@@ -57,6 +57,13 @@ public class ButceYonetModule : Module
         
         DotBoilApp.Services.AddTransient<RecurringTransactionProfile.NotebookResolver>();
         DotBoilApp.Services.AddTransient<RecurringTransactionProfile.TransactionResolver>();
+
+        DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.NotebookResolver>();
+        DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.NotebookLabelResolver>();
+        DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.CurrencyResolver>();
+
+        DotBoilApp.Services.AddTransient<NonCategorizedTransactionReportProfile.NotebookResolver>();
+        DotBoilApp.Services.AddTransient<NonCategorizedTransactionReportProfile.CurrencyResolver>();
         
         return Task.CompletedTask;
     }

@@ -38,7 +38,7 @@ public class GetCategorizedTransactionReportQueryHandler : BaseHandler<GetCatego
 
     public override async Task<BaseResponse> ExecuteRequest(GetCategorizedTransactionReportQuery request, CancellationToken cancellationToken)
     {
-        return await this._cache.GetOrSetAsync(request.ToString(), async () =>
+        var report =  await this._cache.GetOrSetAsync<List<CategorizedTransactionReportDto>>(request.ToString(), async () =>
         {
             var isNotebookUser = await
                 _notebookUserRepository
@@ -49,7 +49,7 @@ public class GetCategorizedTransactionReportQueryHandler : BaseHandler<GetCatego
                     .AnyAsync();
 
             if (!isNotebookUser)
-                return BaseResponse.Response(Array.Empty<CategorizedTransactionReportDto>(), HttpStatusCode.OK);
+                return new List<CategorizedTransactionReportDto>();
             
             var reportItems = await
                 _categorizedTransactionReportRepository
@@ -66,9 +66,46 @@ public class GetCategorizedTransactionReportQueryHandler : BaseHandler<GetCatego
                     .Include(ctr => ctr.Currency)
                     .ToListAsync();
 
-            var responseModel =
-                _mapper.Map<List<CategorizedTransactionReport>, List<CategorizedTransactionReportDto>>(reportItems);
-            return BaseResponse.Response(responseModel, HttpStatusCode.OK);
+            var grouped = reportItems
+                .GroupBy(ctr => new { ctr.NotebookLabelId, ctr.CurrencyId, ctr.Term.Year, ctr.Term.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    g.Key.NotebookLabelId,
+                    g.Key.CurrencyId,
+                    Amount = g.Sum(x => x.Amount),
+                    First = g.First()
+                })
+                .ToList();
+
+            var responseModel = grouped
+                .GroupBy(g => new { g.NotebookLabelId, g.CurrencyId })
+                .SelectMany(g =>
+                {
+                    decimal cumulative = 0;
+                    return g.OrderBy(x => x.Year).ThenBy(x => x.Month)
+                        .Select(x =>
+                        {
+                            cumulative += x.Amount;
+                            var s = x.First;
+                            return new CategorizedTransactionReportDto
+                            {
+                                Notebook = new NotebookDto { Id = s.Notebook.Id, Name = s.Notebook.Name, IsDefault = s.Notebook.IsDefault },
+                                NotebookLabel = new NotebookLabelDto { Id = s.NotebookLabel.Id, Name = s.NotebookLabel.Name, ColorCode = s.NotebookLabel.ColorCode },
+                                TransactionType = s.TransactionType,
+                                Currency = new CurrencyDto { Id = s.Currency.Id, Code = s.Currency.Code, Name = s.Currency.Name, Symbol = s.Currency.Symbol, IsSymbolRight = s.Currency.IsSymbolRight },
+                                Amount = cumulative,
+                                Term = new DateTime(x.Year, x.Month, 1)
+                            };
+                        });
+                })
+                .OrderBy(x => x.Term)
+                .ToList();
+
+            return responseModel;
         }, TimeSpan.FromMinutes(15));
+        
+        return BaseResponse.Response(report, HttpStatusCode.OK);
     }
 }
