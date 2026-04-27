@@ -72,7 +72,9 @@ public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, Bas
                 .WhereIf(!string.IsNullOrEmpty(request.Description), t => t.Description.Contains(request.Description))
                 .WhereIf(request.Amount > 0, t => t.Amount == request.Amount)
                 .WhereIf(request.TransactionType != default, t => t.TransactionType == request.TransactionType)
-                .WhereIf(request.LabelIds.Any(), t => t.TransactionLabels.Any(tl => !tl.IsDeleted && request.LabelIds.Contains(tl.NotebookLabelId)))
+                .WhereIf(
+                    request.LabelIds != null && 
+                    request.LabelIds.Any(), t => t.TransactionLabels.Any(tl => !tl.IsDeleted && request.LabelIds.Contains(tl.NotebookLabelId)))
                 .Include(t => t.Notebook)
                 .Include(t => t.Currency)
                 .Include(t => t.TransactionLabels.Where(tl => !tl.IsDeleted))
