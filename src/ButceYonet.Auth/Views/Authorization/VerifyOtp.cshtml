@@ -1,98 +1,193 @@
 @using DotBoil.Localization
 @using DotBoil.Parameter
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model ButceYonet.Auth.ViewModels.VerifyOtpViewModel
-@inject IParameterManager parameters
 @inject ILocalize localize
-
 @{
-    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
-    var currentUrl = $"/connect/authorize{Context.Request.QueryString}";
-    var parameterLogo = await parameters.GetParameterValue<string>("AuthGuard", "Logo");
-    var parameterLogoDark = await parameters.GetParameterValue<string>("AuthGuard", "LogoDark");
-    var verifyOtpUrl = $"/authorize/verify_otp{Context.Request.QueryString}";
-    var resendOtpUrl = $"/authorize/resend_otp{Context.Request.QueryString}";
-    
-    var prefix = "?";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    var loginUrl      = $"/connect/authorize{Context.Request.QueryString}";
+    var verifyOtpUrl  = $"/authorize/verify_otp{Context.Request.QueryString}";
+    var resendOtpUrl  = $"/authorize/resend_otp{Context.Request.QueryString}";
 
-    if (resendOtpUrl.Contains("&"))
-        prefix = "&";
-    
+    var prefix = "?";
+    if (resendOtpUrl.Contains("&")) prefix = "&";
     if (!Context.Request.Query.ContainsKey("email"))
         resendOtpUrl = $"{resendOtpUrl}{prefix}email={Model.Email}";
+
+    var maskedEmail = string.IsNullOrEmpty(Model.Email) ? "" :
+        System.Text.RegularExpressions.Regex.Replace(Model.Email, @"(.{2})(.*)(@.*)", m =>
+            m.Groups[1].Value + new string('*', m.Groups[2].Value.Length) + m.Groups[3].Value);
+
+    var backLbl     = await localize.LocalizeText("Login", "Back");
+    var title       = await localize.LocalizeText("Login", "VerifyOtpTitle");
+    var subtitle    = await localize.LocalizeText("Login", "VerifyOtpSubTitle");
+    var passLbl     = await localize.LocalizeText("Login", "Password");
+    var btnLbl      = await localize.LocalizeText("Login", "RenewPassword");
+    var resendLbl   = await localize.LocalizeText("Login", "ResendOtp");
+    var noCodeLbl   = await localize.LocalizeText("Login", "NoCodeReceived");
 }
 
-<div class="row m-0">
-    <div class="col-12 p-0">
-        <div class="login-card login-dark">
-            <div>
-                <div><a class="logo" href="@currentUrl"><img class="img-fluid for-light" src="@parameterLogo"><img class="img-fluid for-dark" src="@parameterLogoDark"></a></div>
-                <div class="login-main">
-                    <form action="@verifyOtpUrl" class="theme-form" method="post">
-                        <partial name="_Language"/>
-                        <h4>@await localize.LocalizeText("Login", "VerifyOtpTitle")</h4>
+<!-- Back button -->
+<a class="btn-back" href="@loginUrl">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    @backLbl
+</a>
 
-                        @if (ViewBag.Message != null)
-                        {
-                            <div class="alert alert-@(ViewBag.MessageType ?? "danger")" role="alert">@ViewBag.Message</div>
-                        }
-                        
-                        <input type="hidden" name="Email" value="@Model.Email"/>
-                        
-                        @foreach (var query in Context.Request.Query)
-                        {
-                            <input type="hidden" name="@query.Key" value="@query.Value"/>
-                        }
-                        <div class="form-group">
-                            <label class="col-form-label">@await localize.LocalizeText("Login", "OtpCode")</label>
-                            <input class="form-control" required="" asp-for="OtpCode"/>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-form-label">@await localize.LocalizeText("Login", "Password")</label>
-                            <div class="form-input position-relative">
-                                <input class="form-control" type="password" required="" placeholder="*********" asp-for="Password">
-                                <div class="show-hide"><span class="show"><i class="fa fa-eye"></i> </span></div>
-                            </div>
-                        </div>
-                        <div class="form-group mb-0">
-                            <div class="text-end">
-                                <button class="btn btn-primary btn-block w-100 mt-3" type="submit">@await localize.LocalizeText("Login", "RenewPassword")</button>
-                                <a class="btn btn-primary btn-block w-100 mt-3" href="@resendOtpUrl">@await localize.LocalizeText("Login", "ResendOtp")</a>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Icon -->
+<div class="icon-box">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
 </div>
 
-<script>
-    window.addEventListener('DOMContentLoaded', function (){
-        var element = document.getElementsByClassName('show-hide')[0];
-        
-        if (element === undefined)
-            return;
-        
-        element.addEventListener('click', function (){
-            var iconElement = document.querySelector('i', element);
-            if (iconElement === null || iconElement === undefined)
-                return;
-            
-            var className = iconElement.className;
-            var typeName = 'password';
+<h1 class="form-h1">@title</h1>
+@if (!string.IsNullOrEmpty(maskedEmail))
+{
+    <p class="form-sub">@subtitle <strong style="color:#111827">@maskedEmail</strong></p>
+}
+else
+{
+    <p class="form-sub">@subtitle</p>
+}
 
-            if (className === 'fa fa-eye'){
-                iconElement.classList.remove('fa-eye');
-                iconElement.classList.add('fa-eye-slash');
-                
-                typeName = 'text';
-                
-            }else{
-                iconElement.classList.remove('fa-eye-slash');
-                iconElement.classList.add('fa-eye');
-            }   
-            
-            document.getElementById('Password').type = typeName;
-        })        
-    })
+@if (ViewBag.Message != null)
+{
+    var mt = (string)(ViewBag.MessageType ?? "danger");
+    var mc = mt == "success" ? "success" : mt == "info" ? "info" : mt == "warning" ? "warning" : "danger";
+    <div class="form-alert @mc">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        @ViewBag.Message
+    </div>
+}
+
+<form action="@verifyOtpUrl" method="post" id="otpForm" novalidate>
+    <input type="hidden" name="Email" value="@Model.Email"/>
+    <input type="hidden" name="OtpCode" id="otpHidden" value="@Model.OtpCode"/>
+    @foreach (var q in Context.Request.Query)
+    {
+        <input type="hidden" name="@q.Key" value="@q.Value"/>
+    }
+
+    <!-- 6-digit boxes -->
+    <div class="otp-boxes" id="otpBoxes">
+        @for (int i = 0; i < 6; i++)
+        {
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" autocomplete="@(i == 0 ? "one-time-code" : "off")" data-index="@i">
+        }
+    </div>
+
+    <div class="form-field">
+        <label class="field-label">@passLbl</label>
+        <div class="field-wrap">
+            <input class="field-input" id="otpPass" type="password" required placeholder="••••••••" asp-for="Password" autocomplete="new-password">
+            <button type="button" class="pw-btn" id="toggleOtpPass" aria-label="@passLbl">
+                <svg id="otpEyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <button class="btn-submit" type="submit">@btnLbl →</button>
+</form>
+
+<div class="resend-row">
+    @noCodeLbl
+    <a href="@resendOtpUrl" id="resendLink">@resendLbl</a>
+    <span id="resendTimer" style="display:none">(<strong id="resendCount">30</strong>s)</span>
+</div>
+
+@section Script {
+<script>
+(function () {
+    // OTP box logic
+    var boxes   = Array.from(document.querySelectorAll('.otp-box'));
+    var hidden  = document.getElementById('otpHidden');
+    var form    = document.getElementById('otpForm');
+
+    function syncHidden() {
+        hidden.value = boxes.map(function (b) { return b.value || ' '; }).join('').trimEnd();
+    }
+
+    boxes.forEach(function (box, i) {
+        box.addEventListener('keydown', function (e) {
+            if (e.key === 'Backspace') {
+                box.value = '';
+                box.classList.remove('filled');
+                syncHidden();
+                if (i > 0) boxes[i - 1].focus();
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft' && i > 0) {
+                boxes[i - 1].focus();
+            } else if (e.key === 'ArrowRight' && i < 5) {
+                boxes[i + 1].focus();
+            }
+        });
+        box.addEventListener('input', function () {
+            var val = box.value.replace(/\D/g, '').slice(-1);
+            box.value = val;
+            box.classList.toggle('filled', val !== '');
+            syncHidden();
+            if (val && i < 5) boxes[i + 1].focus();
+        });
+        box.addEventListener('paste', function (e) {
+            var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+            e.preventDefault();
+            pasted.split('').forEach(function (ch, j) {
+                if (boxes[j]) { boxes[j].value = ch; boxes[j].classList.add('filled'); }
+            });
+            syncHidden();
+            if (boxes[Math.min(pasted.length, 5)]) boxes[Math.min(pasted.length, 5)].focus();
+        });
+    });
+
+    // Pre-fill if model has value
+    var existing = (hidden.value || '').trim();
+    existing.split('').forEach(function (ch, i) {
+        if (boxes[i] && ch !== ' ') { boxes[i].value = ch; boxes[i].classList.add('filled'); }
+    });
+
+    // Form validation
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            syncHidden();
+            if (hidden.value.trim().length < 6) {
+                e.preventDefault();
+                boxes[0].focus();
+            }
+        });
+    }
+
+    // Password toggle
+    var passInp = document.getElementById('otpPass');
+    var passBtn = document.getElementById('toggleOtpPass');
+    var passIco = document.getElementById('otpEyeIcon');
+    var eyeOpen  = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    var eyeClose = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    if (passBtn) {
+        passBtn.addEventListener('click', function () {
+            var hidden2 = passInp.type === 'password';
+            passInp.type = hidden2 ? 'text' : 'password';
+            passIco.innerHTML = hidden2 ? eyeClose : eyeOpen;
+        });
+    }
+
+    // Resend countdown
+    var resendLink  = document.getElementById('resendLink');
+    var resendTimer = document.getElementById('resendTimer');
+    var resendCount = document.getElementById('resendCount');
+    var countdown = 30;
+    if (resendLink && resendTimer && resendCount) {
+        resendLink.style.display = 'none';
+        resendTimer.style.display = 'inline';
+        var iv = setInterval(function () {
+            countdown--;
+            resendCount.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(iv);
+                resendLink.style.display = 'inline';
+                resendTimer.style.display = 'none';
+            }
+        }, 1000);
+    }
+})();
 </script>
+}

@@ -1,122 +1,291 @@
 @using DotBoil.Localization
 @using DotBoil.Parameter
 @using DotBoil.UserConsents
+@using DotBoil.UserConsents.Models
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @inject ILocalize localize
-@inject IParameterManager parameters
 @{
-    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
-    var currentUrl = $"/connect/authorize{Context.Request.QueryString}";
-    var parameterLogo = await parameters.GetParameterValue<string>("AuthGuard", "Logo");
-    var parameterLogoDark = await parameters.GetParameterValue<string>("AuthGuard", "LogoDark");
-    var loginUrl = $"/connect/authorize{Context.Request.QueryString}";
-    var consents = ViewBag.Consents as IList<ConsentResult> ?? new List<ConsentResult>();
-}
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    var loginUrl    = $"/connect/authorize{Context.Request.QueryString}";
+    var consents    = ViewBag.Consents as IList<ConsentResult> ?? new List<ConsentResult>();
 
+    var tabLogin    = await localize.LocalizeText("Login", "SignIn");
+    var tabRegister = await localize.LocalizeText("Login", "CreateAccount");
+    var title       = await localize.LocalizeText("Login", "RegisterTitle");
+    var subtitle    = await localize.LocalizeText("Login", "RegisterSubTitle");
+    var nameLbl     = await localize.LocalizeText("Login", "Name");
+    var surnameLbl  = await localize.LocalizeText("Login", "Surname");
+    var emailLbl    = await localize.LocalizeText("Login", "EmailAddress");
+    var passLbl     = await localize.LocalizeText("Login", "Password");
+    var btnLbl      = await localize.LocalizeText("Login", "CreateAccount");
+    var hasAccLbl   = await localize.LocalizeText("Login", "AlreadyHaveAccount");
+    var signInLbl   = await localize.LocalizeText("Login", "SignIn");
+
+    var consentReadLbl   = await localize.LocalizeText("Login", "ConsentRead");
+    var consentCloseLbl  = await localize.LocalizeText("Login", "ConsentClose");
+    var consentAcceptLbl = await localize.LocalizeText("Login", "ConsentAccept");
+    var consentReqLbl    = await localize.LocalizeText("Login", "ConsentRequired");
+    var consentOptLbl    = await localize.LocalizeText("Login", "ConsentOptional");
+
+    var consentTitles = new Dictionary<string, string>
+    {
+        [ConsentType.TermsOfService.ToString()]         = await localize.LocalizeText("Login", "ConsentTermsOfService"),
+        [ConsentType.PrivacyPolicy.ToString()]          = await localize.LocalizeText("Login", "ConsentPrivacyPolicy"),
+        [ConsentType.CookiePolicy.ToString()]           = await localize.LocalizeText("Login", "ConsentCookiePolicy"),
+        [ConsentType.MarketingCommunication.ToString()] = await localize.LocalizeText("Login", "ConsentMarketing"),
+        [ConsentType.DataProcessing.ToString()]         = await localize.LocalizeText("Login", "ConsentDataProcessing"),
+    };
+
+    var consentColors = new Dictionary<string, string>
+    {
+        [ConsentType.TermsOfService.ToString()]         = "#3B82F6",
+        [ConsentType.PrivacyPolicy.ToString()]          = "#10B981",
+        [ConsentType.CookiePolicy.ToString()]           = "#A855F7",
+        [ConsentType.MarketingCommunication.ToString()] = "#F59E0B",
+        [ConsentType.DataProcessing.ToString()]         = "#6366F1",
+    };
+
+    var consentIcons = new Dictionary<string, string>
+    {
+        [ConsentType.TermsOfService.ToString()] =
+            @"<svg width=""18"" height=""18"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""><path d=""M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2""/><rect x=""8"" y=""2"" width=""8"" height=""4"" rx=""1""/><line x1=""9"" y1=""12"" x2=""15"" y2=""12""/><line x1=""9"" y1=""16"" x2=""13"" y2=""16""/></svg>",
+        [ConsentType.PrivacyPolicy.ToString()] =
+            @"<svg width=""18"" height=""18"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""><path d=""M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z""/></svg>",
+        [ConsentType.CookiePolicy.ToString()] =
+            @"<svg width=""18"" height=""18"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""><ellipse cx=""12"" cy=""5"" rx=""9"" ry=""3""/><path d=""M21 12c0 1.66-4 3-9 3s-9-1.34-9-3""/><path d=""M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5""/></svg>",
+        [ConsentType.MarketingCommunication.ToString()] =
+            @"<svg width=""18"" height=""18"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""><path d=""M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9""/><path d=""M13.73 21a2 2 0 0 1-3.46 0""/></svg>",
+        [ConsentType.DataProcessing.ToString()] =
+            @"<svg width=""18"" height=""18"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""><rect x=""4"" y=""4"" width=""16"" height=""16"" rx=""2""/><rect x=""9"" y=""9"" width=""6"" height=""6""/><line x1=""9"" y1=""1"" x2=""9"" y2=""4""/><line x1=""15"" y1=""1"" x2=""15"" y2=""4""/><line x1=""9"" y1=""20"" x2=""9"" y2=""23""/><line x1=""15"" y1=""20"" x2=""15"" y2=""23""/><line x1=""20"" y1=""9"" x2=""23"" y2=""9""/><line x1=""20"" y1=""14"" x2=""23"" y2=""14""/><line x1=""1"" y1=""9"" x2=""4"" y2=""9""/><line x1=""1"" y1=""14"" x2=""4"" y2=""14""/></svg>",
+    };
+}
 @model ButceYonet.Auth.ViewModels.RegisterViewModel
 
-<div class="row m-0">
-    <div class="col-12 p-0">
-        <div class="login-card login-dark">
-            <div>
-                <div><a class="logo" href="@currentUrl"><img class="img-fluid for-light" src="@parameterLogo"><img class="img-fluid for-dark" src="@parameterLogoDark"></a></div>
-                <div class="login-main">
-                    <form class="theme-form" method="post">
-                        <partial name="_Language"/>
-                        <h4>@await localize.LocalizeText("Login", "RegisterTitle")</h4>
+<!-- Tab switcher -->
+<div class="auth-tabs">
+    <a class="auth-tab" href="@loginUrl">@tabLogin</a>
+    <span class="auth-tab active">@tabRegister</span>
+</div>
 
-                        @if (ViewBag.Message != null)
-                        {
-                            <div class="alert alert-@(ViewBag.MessageType ?? "danger")" role="alert">@ViewBag.Message</div>
-                        }
+<h1 class="form-h1">@title</h1>
+<p class="form-sub">@subtitle</p>
 
-                        @foreach (var query in Context.Request.Query)
-                        {
-                            <input type="hidden" name="@query.Key" value="@query.Value"/>
-                        }
-                        <div class="form-group">
-                            <label class="col-form-label">@await localize.LocalizeText("Login", "Name")</label>
-                            <input class="form-control" type="text" required="" placeholder="@await localize.LocalizeText("Login", "Name")" asp-for="Name">
-                        </div>
-                        <div class="form-group">
-                            <label class="col-form-label">@await localize.LocalizeText("Login", "Surname")</label>
-                            <input class="form-control" type="text" required="" placeholder="@await localize.LocalizeText("Login", "Surname")" asp-for="Surname">
-                        </div>
-                        <div class="form-group">
-                            <label class="col-form-label">@await localize.LocalizeText("Login", "EmailAddress")</label>
-                            <input class="form-control" type="email" required="" placeholder="user@gmail.com" asp-for="Email">
-                        </div>
-                        <div class="form-group">
-                            <label class="col-form-label">@await localize.LocalizeText("Login", "Password")</label>
-                            <div class="form-input position-relative">
-                                <input class="form-control" type="password" required="" placeholder="*********" asp-for="Password">
-                                <div class="show-hide"><span class="show"><i class="fa fa-eye"></i> </span></div>
-                            </div>
-                        </div>
+@if (ViewBag.Message != null)
+{
+    var mt = (string)(ViewBag.MessageType ?? "danger");
+    var mc = mt == "success" ? "success" : mt == "info" ? "info" : mt == "warning" ? "warning" : "danger";
+    <div class="form-alert @mc">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        @ViewBag.Message
+    </div>
+}
 
-                        @if (consents.Any())
-                        {
-                            <div class="form-group">
-                                @foreach (var consent in consents)
-                                {
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input"
-                                               type="checkbox"
-                                               name="AcceptedConsentTypes"
-                                               value="@consent.Type.ToString()"
-                                               id="consent_@consent.Type.ToString()"
-                                               @(consent.IsRequired ? "required" : "")>
-                                        <label class="form-check-label" for="consent_@consent.Type.ToString()">
-                                            @Html.Raw(consent.Content)
-                                            @if (consent.IsRequired)
-                                            {
-                                                <span class="text-danger">*</span>
-                                            }
-                                        </label>
-                                    </div>
-                                }
-                            </div>
-                        }
+<form method="post" id="registerForm" novalidate>
+    @foreach (var q in Context.Request.Query)
+    {
+        <input type="hidden" name="@q.Key" value="@q.Value"/>
+    }
 
-                        <div class="form-group mb-0">
-                            <a class="link" href="@loginUrl">@await localize.LocalizeText("Login", "SignIn")</a>
-                            <div class="text-end">
-                                <button class="btn btn-primary btn-block w-100 mt-3" type="submit">@await localize.LocalizeText("Login", "CreateAccount")</button>
-                            </div>
+    <div class="form-field">
+        <label class="field-label">@nameLbl</label>
+        <div class="field-wrap">
+            <input class="field-input" type="text" required placeholder="@nameLbl" asp-for="Name" autocomplete="given-name">
+        </div>
+    </div>
+
+    <div class="form-field">
+        <label class="field-label">@surnameLbl</label>
+        <div class="field-wrap">
+            <input class="field-input" type="text" required placeholder="@surnameLbl" asp-for="Surname" autocomplete="family-name">
+        </div>
+    </div>
+
+    <div class="form-field">
+        <label class="field-label">@emailLbl</label>
+        <div class="field-wrap">
+            <input class="field-input" type="email" required placeholder="ornek@email.com" asp-for="Email" autocomplete="email">
+        </div>
+    </div>
+
+    <div class="form-field">
+        <label class="field-label">@passLbl</label>
+        <div class="field-wrap">
+            <input class="field-input" id="regPass" type="password" required placeholder="••••••••" asp-for="Password" autocomplete="new-password">
+            <button type="button" class="pw-btn" id="toggleRegPass" aria-label="@passLbl">
+                <svg id="regEyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
+    </div>
+
+    @if (consents.Any())
+    {
+        <div class="consent-section">
+            @foreach (var consent in consents)
+            {
+                var typeKey   = consent.Type.ToString();
+                var cTitle    = consentTitles.GetValueOrDefault(typeKey, typeKey);
+                var cColor    = consentColors.GetValueOrDefault(typeKey, "#6b7280");
+                var cIcon     = consentIcons.GetValueOrDefault(typeKey, "");
+                var cBadgeCls = consent.IsRequired ? "required" : "optional";
+                var cBadgeLbl = consent.IsRequired ? consentReqLbl : consentOptLbl;
+                <div class="consent-card @(consent.IsRequired ? "required" : "")">
+                    <div class="consent-icon" style="background:@(cColor)1a;color:@cColor">
+                        @Html.Raw(cIcon)
+                    </div>
+                    <div class="consent-info">
+                        <div class="consent-title-row">
+                            <span class="consent-name">@cTitle</span>
+                            <span class="consent-badge @cBadgeCls">@cBadgeLbl</span>
                         </div>
-                    </form>
+                        <a href="#" class="consent-read-link" data-open-modal="@typeKey">@consentReadLbl →</a>
+                    </div>
+                    <label class="consent-toggle" for="consent_@typeKey">
+                        <input type="checkbox"
+                               name="AcceptedConsentTypes"
+                               value="@typeKey"
+                               id="consent_@typeKey"
+                               @(consent.IsRequired ? "required" : "")>
+                        <span class="toggle-track"><span class="toggle-knob"></span></span>
+                    </label>
+                </div>
+            }
+        </div>
+    }
+
+    <button class="btn-submit" type="submit" style="margin-top:20px">@btnLbl →</button>
+</form>
+
+@if (consents.Any())
+{
+    foreach (var consent in consents)
+    {
+        var typeKey = consent.Type.ToString();
+        var cTitle  = consentTitles.GetValueOrDefault(typeKey, typeKey);
+        var cColor  = consentColors.GetValueOrDefault(typeKey, "#6b7280");
+        var cIcon   = consentIcons.GetValueOrDefault(typeKey, "");
+        <div class="consent-modal-overlay" id="modal_@typeKey">
+            <div class="consent-modal">
+                <div class="consent-modal-header">
+                    <div class="consent-icon" style="background:@(cColor)1a;color:@cColor;width:36px;height:36px;border-radius:9px;flex-shrink:0">
+                        @Html.Raw(cIcon)
+                    </div>
+                    <span class="consent-modal-title">@cTitle</span>
+                    <button type="button" class="consent-modal-x" data-close-modal="@typeKey" aria-label="Close">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="consent-modal-body">
+                    @Html.Raw(consent.Content)
+                </div>
+                <div class="consent-modal-footer">
+                    <button type="button" class="consent-modal-btn c-close" data-close-modal="@typeKey">@consentCloseLbl</button>
+                    <button type="button" class="consent-modal-btn accept" data-accept-modal="@typeKey">@consentAcceptLbl</button>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    }
+}
 
+<p class="form-footer-txt">
+    @hasAccLbl
+    <a href="@loginUrl">@signInLbl</a>
+</p>
+
+@section Script {
 <script>
-    window.addEventListener('DOMContentLoaded', function (){
-        var element = document.getElementsByClassName('show-hide')[0];
+(function () {
+    // Password toggle
+    var inp  = document.getElementById('regPass');
+    var btn  = document.getElementById('toggleRegPass');
+    var icon = document.getElementById('regEyeIcon');
+    var eyeOpen  = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    var eyeClose = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    if (btn) {
+        btn.addEventListener('click', function () {
+            var h = inp.type === 'password';
+            inp.type = h ? 'text' : 'password';
+            icon.innerHTML = h ? eyeClose : eyeOpen;
+        });
+    }
 
-        if (element === undefined)
-            return;
+    // Form validation on submit
+    var form = document.getElementById('registerForm');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            var valid = true;
 
-        element.addEventListener('click', function (){
-            var iconElement = document.querySelector('i', element);
-            if (iconElement === null || iconElement === undefined)
-                return;
+            // Text/email/password fields
+            ['Name', 'Surname', 'Email', 'Password'].forEach(function (name) {
+                var inp = form.querySelector('[name="' + name + '"]');
+                if (!inp) return;
+                var empty = inp.value.trim() === '';
+                inp.classList.toggle('error', empty);
+                if (empty) { valid = false; }
+            });
 
-            var className = iconElement.className;
-            var typeName = 'password';
+            // Required consent checkboxes
+            var required = form.querySelectorAll('input[name="AcceptedConsentTypes"][required]');
+            required.forEach(function (cb) {
+                var card = cb.closest('.consent-card');
+                if (!cb.checked) {
+                    valid = false;
+                    if (card) card.classList.add('consent-error');
+                } else {
+                    if (card) card.classList.remove('consent-error');
+                }
+            });
 
-            if (className === 'fa fa-eye'){
-                iconElement.classList.remove('fa-eye');
-                iconElement.classList.add('fa-eye-slash');
-
-                typeName = 'text';
-
-            }else{
-                iconElement.classList.remove('fa-eye-slash');
-                iconElement.classList.add('fa-eye');
+            if (!valid) {
+                e.preventDefault();
+                // scroll to first error
+                var firstErr = form.querySelector('.field-input.error, .consent-card.consent-error');
+                if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+        });
 
-            document.getElementById('Password').type = typeName;
-        })
-    })
+        // Clear field error on input
+        ['Name', 'Surname', 'Email', 'Password'].forEach(function (name) {
+            var inp = form.querySelector('[name="' + name + '"]');
+            if (inp) inp.addEventListener('input', function () { inp.classList.remove('error'); });
+        });
+    }
+
+    // Remove consent error on toggle
+    document.querySelectorAll('input[name="AcceptedConsentTypes"]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            var card = cb.closest('.consent-card');
+            if (card && cb.checked) card.classList.remove('consent-error');
+        });
+    });
+
+    // Consent modals
+    document.querySelectorAll('[data-open-modal]').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            var overlay = document.getElementById('modal_' + el.getAttribute('data-open-modal'));
+            if (overlay) overlay.classList.add('open');
+        });
+    });
+    document.querySelectorAll('[data-close-modal]').forEach(function (el) {
+        el.addEventListener('click', function () {
+            var overlay = document.getElementById('modal_' + el.getAttribute('data-close-modal'));
+            if (overlay) overlay.classList.remove('open');
+        });
+    });
+    document.querySelectorAll('[data-accept-modal]').forEach(function (el) {
+        el.addEventListener('click', function () {
+            var id = el.getAttribute('data-accept-modal');
+            var cb = document.getElementById('consent_' + id);
+            if (cb) cb.checked = true;
+            var overlay = document.getElementById('modal_' + id);
+            if (overlay) overlay.classList.remove('open');
+        });
+    });
+    document.querySelectorAll('.consent-modal-overlay').forEach(function (overlay) {
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) overlay.classList.remove('open');
+        });
+    });
+})();
 </script>
+}

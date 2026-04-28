@@ -3,108 +3,110 @@
 @using DotBoil.Parameter
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @inject ILocalize localize
-@inject IParameterManager parameters
 @inject IConfiguration configuration
 @{
-    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
     var currentUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
-    var parameterLogo = await parameters.GetParameterValue<string>("AuthGuard", "Logo");
-    var parameterLogoDark = await parameters.GetParameterValue<string>("AuthGuard", "LogoDark");
-    var externalSignInManagers = configuration.GetSection("DotBoil:ExternalSignInManagers").Get<List<ExternalSignInManagerViewModel>>() ?? new List<ExternalSignInManagerViewModel>();
     var registerUrl = $"/Authorize/Register{Context.Request.QueryString}";
     var forgotPasswordUrl = $"/Authorize/forgot_password{Context.Request.QueryString}";
-}
+    var externalSignInManagers = configuration.GetSection("DotBoil:ExternalSignInManagers").Get<List<ExternalSignInManagerViewModel>>() ?? new List<ExternalSignInManagerViewModel>();
 
+    var tabLogin    = await localize.LocalizeText("Login", "SignIn");
+    var tabRegister = await localize.LocalizeText("Login", "CreateAccount");
+    var title       = await localize.LocalizeText("Login", "SignInTitle");
+    var subtitle    = await localize.LocalizeText("Login", "SignInSubTitle");
+    var emailLbl    = await localize.LocalizeText("Login", "EmailAddress");
+    var passLbl     = await localize.LocalizeText("Login", "Password");
+    var forgotLbl   = await localize.LocalizeText("Login", "ForgotPassword");
+    var btnLbl      = await localize.LocalizeText("Login", "SignIn");
+    var orLbl       = await localize.LocalizeText("Login", "OrSignInWith");
+    var noAccLbl    = await localize.LocalizeText("Login", "DontHaveAccount");
+    var createLbl   = await localize.LocalizeText("Login", "CreateAccount");
+}
 @model ButceYonet.Auth.ViewModels.SignInViewModel
 
-<div class="row m-0">
-    <div class="col-12 p-0">
-        <div class="login-card login-dark">
-            <div>
-                <div><a class="logo" href="@currentUrl"><img class="img-fluid for-light" src="@parameterLogo"><img class="img-fluid for-dark" src="@parameterLogoDark"></a></div>
-                <div class="login-main">
-                    <form class="theme-form" method="post">
-                        <partial name="_Language"/>
-                        <h4>@await localize.LocalizeText("Login", "SignInTitle")</h4>
-                        <p>@await localize.LocalizeText("Login", "SignInSubTitle")</p>
-                        
-                        @if (ViewBag.Message != null)
-                        {
-                            <div class="alert alert-@(ViewBag.MessageType ?? "danger")" role="alert">@ViewBag.Message</div>
-                        }
-                        
-                        @foreach (var query in Context.Request.Query)
-                        {
-                            <input type="hidden" name="@query.Key" value="@query.Value"/>
-                        }
-                        <div class="form-group">
-                            <label class="col-form-label">@await localize.LocalizeText("Login", "EmailAddress")</label>
-                            <input class="form-control" type="email" required="" placeholder="user@gmail.com" asp-for="Email">
-                        </div>
-                        <div class="form-group">
-                            <label class="col-form-label">@await localize.LocalizeText("Login", "Password")</label>
-                            <div class="form-input position-relative">
-                                <input class="form-control" type="password" required="" placeholder="*********" asp-for="Password">
-                                <div class="show-hide"><span class="show"><i class="fa fa-eye"></i> </span></div>
-                            </div>
-                        </div>
-                        <div class="form-group mb-0">
-                            <div class="form-check">
-                            </div>
-                            <a class="link" href="@forgotPasswordUrl">@await localize.LocalizeText("Login", "ForgotPassword")</a>
-                            <div class="text-end">
-                                <button class="btn btn-primary btn-block w-100 mt-3" type="submit">@await localize.LocalizeText("Login", "SignIn")</button>
-                            </div>
-                        </div>
-                        @if (externalSignInManagers.Any())
-                        {
-                            <h6 class="text-muted mt-4 or">@await localize.LocalizeText("Login", "OrSignInWith")</h6>
-                            <div class="social mt-4">
-                                <div class="btn-showcase">
-                                    @foreach (var externalSignInManager in externalSignInManagers)
-                                    {
-                                        <a class="btn btn-light" href="/connect/@externalSignInManager.ServiceName" target="_self">
-                                            <i class="@externalSignInManager.Logo"></i>
-                                        </a>
-                                    }
-                                </div>
-                            </div>
-                        }
-                        <p class="mt-4 mb-0 text-center">@await localize.LocalizeText("Login", "DontHaveAccount")<a class="ms-2" href="@registerUrl">@await localize.LocalizeText("Login", "CreateAccount")</a></p>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Tab switcher -->
+<div class="auth-tabs">
+    <span class="auth-tab active">@tabLogin</span>
+    <a class="auth-tab" href="@registerUrl">@tabRegister</a>
 </div>
 
-<script>
-    window.addEventListener('DOMContentLoaded', function (){
-        var element = document.getElementsByClassName('show-hide')[0];
-        
-        if (element === undefined)
-            return;
-        
-        element.addEventListener('click', function (){
-            var iconElement = document.querySelector('i', element);
-            if (iconElement === null || iconElement === undefined)
-                return;
-            
-            var className = iconElement.className;
-            var typeName = 'password';
+<h1 class="form-h1">@title</h1>
+<p class="form-sub">@subtitle</p>
 
-            if (className === 'fa fa-eye'){
-                iconElement.classList.remove('fa-eye');
-                iconElement.classList.add('fa-eye-slash');
-                
-                typeName = 'text';
-                
-            }else{
-                iconElement.classList.remove('fa-eye-slash');
-                iconElement.classList.add('fa-eye');
-            }   
-            
-            document.getElementById('Password').type = typeName;
-        })        
-    })
+@if (ViewBag.Message != null)
+{
+    var mt = (string)(ViewBag.MessageType ?? "danger");
+    var mc = mt == "success" ? "success" : mt == "info" ? "info" : mt == "warning" ? "warning" : "danger";
+    <div class="form-alert @mc">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        @ViewBag.Message
+    </div>
+}
+
+<form method="post" id="loginForm" novalidate>
+    @foreach (var q in Context.Request.Query)
+    {
+        <input type="hidden" name="@q.Key" value="@q.Value"/>
+    }
+
+    <div class="form-field">
+        <label class="field-label" for="loginEmail">@emailLbl</label>
+        <div class="field-wrap">
+            <input class="field-input" id="loginEmail" type="email" required placeholder="ornek@email.com" asp-for="Email" autocomplete="email">
+        </div>
+    </div>
+
+    <div class="form-field">
+        <label class="field-label" for="loginPass">@passLbl</label>
+        <div class="field-wrap">
+            <input class="field-input" id="loginPass" type="password" required placeholder="••••••••" asp-for="Password" autocomplete="current-password">
+            <button type="button" class="pw-btn" id="togglePass" aria-label="@passLbl">
+                <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="forgot-row">
+        <a class="forgot-link" href="@forgotPasswordUrl">@forgotLbl</a>
+    </div>
+
+    <button class="btn-submit" type="submit">@btnLbl →</button>
+</form>
+
+@if (externalSignInManagers.Any())
+{
+    <div class="form-divider"><span>@orLbl</span></div>
+    <div class="social-grid">
+        @foreach (var m in externalSignInManagers)
+        {
+            <a class="btn-social" href="/connect/@m.ServiceName" target="_self">
+                <i class="@m.Logo"></i>
+                <span>@m.ServiceName</span>
+            </a>
+        }
+    </div>
+}
+
+<p class="form-footer-txt">
+    @noAccLbl
+    <a href="@registerUrl">@createLbl</a>
+</p>
+
+@section Script {
+<script>
+(function () {
+    var inp  = document.getElementById('loginPass');
+    var btn  = document.getElementById('togglePass');
+    var icon = document.getElementById('eyeIcon');
+    if (!btn) return;
+    var eyeOpen  = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    var eyeClose = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    btn.addEventListener('click', function () {
+        var hidden = inp.type === 'password';
+        inp.type = hidden ? 'text' : 'password';
+        icon.innerHTML = hidden ? eyeClose : eyeOpen;
+    });
+})();
 </script>
+}
