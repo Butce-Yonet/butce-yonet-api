@@ -24,13 +24,13 @@ public class TransactionDeletedDomainEvent : IEvent
         }
     }
 
-    public Transaction Transaction { get; set; }
+    public TransactionV2 Transaction { get; set; }
 
     public TransactionDeletedDomainEvent()
     {
     }
 
-    public TransactionDeletedDomainEvent(Transaction transaction)
+    public TransactionDeletedDomainEvent(TransactionV2 transaction)
     {
         Transaction = transaction;
     }

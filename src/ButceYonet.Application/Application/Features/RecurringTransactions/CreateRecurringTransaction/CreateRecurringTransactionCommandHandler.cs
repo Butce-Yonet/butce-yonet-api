@@ -18,25 +18,25 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.Crea
 public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurringTransactionCommand, BaseResponse>
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    private readonly IRepository<NotebookLabel, ButceYonetDbContext> _notebookLabelRepository;
+    private readonly IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
     private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
     private readonly IRecurringTransactionIntervalsService _recurringTransactionIntervalsService;
-    
+
     public CreateRecurringTransactionCommandHandler(
-        ICache cache, 
+        ICache cache,
         IUser user,
-        IMapper mapper, 
+        IMapper mapper,
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<NotebookLabel, ButceYonetDbContext> notebookLabelRepository,
+        IRepository<UserLabel, ButceYonetDbContext> userLabelRepository,
         IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository,
         IRecurringTransactionIntervalsService recurringTransactionIntervalsService)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
-        _notebookLabelRepository = notebookLabelRepository;
+        _userLabelRepository = userLabelRepository;
         _recurringTransactionRepository = recurringTransactionRepository;
         _recurringTransactionIntervalsService = recurringTransactionIntervalsService;
     }
@@ -54,15 +54,23 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
         if (!isNotebookUser)
             throw new BusinessRuleException("User is not in notebook"); //TODO:
 
-        var transactions = new List<Transaction>();
-        
-        var notebookLabels = await
-            _notebookLabelRepository
-                .GetAll()
-                .Where(nl => nl.NotebookId == request.NotebookId)
-                .ToListAsync();
-        
-        var transaction = new Transaction
+        var defaultUserId = await _notebookUserRepository
+            .Get()
+            .Where(nu => nu.NotebookId == request.NotebookId && nu.IsDefault)
+            .Select(nu => nu.UserId)
+            .FirstOrDefaultAsync();
+
+        var userLabels = await _userLabelRepository
+            .GetAll()
+            .Where(ul => ul.UserId == null || ul.UserId == defaultUserId)
+            .ToListAsync();
+
+        var matchingLabels = userLabels
+            .Where(ul => request.Transaction.Labels.Contains(ul.Id))
+            .Select(ul => new TransactionLabelV2 { UserLabelId = ul.Id })
+            .ToList();
+
+        var transaction = new TransactionV2
         {
             NotebookId = request.NotebookId,
             ExternalId = "",
@@ -71,18 +79,10 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
             Amount = request.Transaction.Amount,
             CurrencyId = request.Transaction.CurrencyId,
             TransactionType = request.Transaction.TransactionType,
-            TransactionDate = request.Transaction.TransactionDate
+            TransactionDate = request.Transaction.TransactionDate,
+            TransactionLabelsV2 = matchingLabels,
+            IsMatched = matchingLabels.Any()
         };
-
-        transaction.TransactionLabels = notebookLabels
-            .Where(nl => request.Transaction.Labels.Contains(nl.Id))
-            .Select(nl => new TransactionLabel
-            {
-                NotebookLabelId = nl.Id
-            }).ToList();
-
-        transaction.IsMatched = transaction.TransactionLabels.Any();
-        transactions.Add(transaction);
 
         var recurringTransaction = new RecurringTransaction
         {
@@ -94,7 +94,7 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
             Frequency = request.Frequency,
             Interval = request.Interval,
             NextOccurrence = request.StartDate,
-            StateData = JsonSerializer.Serialize(transactions)
+            StateData = JsonSerializer.Serialize(new List<TransactionV2> { transaction })
         };
 
         var recurringTransactionAddedDomainEvent = new RecurringTransactionAddedDomainEvent(recurringTransaction);
@@ -103,6 +103,6 @@ public class CreateRecurringTransactionCommandHandler : BaseHandler<CreateRecurr
         await _recurringTransactionRepository.AddAsync(recurringTransaction);
         await _recurringTransactionRepository.SaveChangesAsync();
 
-        return BaseResponse.Response(new {}, HttpStatusCode.OK);
+        return BaseResponse.Response(new { }, HttpStatusCode.OK);
     }
 }

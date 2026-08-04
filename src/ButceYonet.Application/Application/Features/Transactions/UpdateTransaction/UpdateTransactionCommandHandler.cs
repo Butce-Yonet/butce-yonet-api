@@ -10,7 +10,6 @@ using DotBoil.EFCore;
 using DotBoil.Entities;
 using DotBoil.Localization;
 using DotBoil.Parameter;
-using MassTransit.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Application.Application.Features.Transactions.UpdateTransaction;
@@ -18,27 +17,27 @@ namespace ButceYonet.Application.Application.Features.Transactions.UpdateTransac
 public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionCommand, BaseResponse>
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
-    private readonly IRepository<TransactionLabel, ButceYonetDbContext> _transactionLabelRepository;
-    private readonly IRepository<NotebookLabel, ButceYonetDbContext> _notebookLabelRepository;
-    
+    private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
+    private readonly IRepository<TransactionLabelV2, ButceYonetDbContext> _transactionLabelV2Repository;
+    private readonly IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
+
     public UpdateTransactionCommandHandler(
         ICache cache,
-        IUser user, 
+        IUser user,
         IMapper mapper,
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<Transaction, ButceYonetDbContext> transactionRepository,
-        IRepository<TransactionLabel, ButceYonetDbContext> transactionLabelRepository,
-        IRepository<NotebookLabel, ButceYonetDbContext> notebookLabelRepository)
+        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository,
+        IRepository<TransactionLabelV2, ButceYonetDbContext> transactionLabelV2Repository,
+        IRepository<UserLabel, ButceYonetDbContext> userLabelRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
         _transactionRepository = transactionRepository;
-        _transactionLabelRepository = transactionLabelRepository;
-        _notebookLabelRepository = notebookLabelRepository;
+        _transactionLabelV2Repository = transactionLabelV2Repository;
+        _userLabelRepository = userLabelRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(UpdateTransactionCommand request, CancellationToken cancellationToken)
@@ -60,7 +59,7 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
                 .Where(t =>
                     t.NotebookId == request.NotebookId &&
                     t.Id == request.TransactionId)
-                .Include(t => t.TransactionLabels)
+                .Include(t => t.TransactionLabelsV2)
                 .FirstOrDefaultAsync();
 
         if (transaction is null)
@@ -73,49 +72,57 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
         transaction.TransactionType = request.TransactionType;
         transaction.TransactionDate = request.TransactionDate;
 
-        foreach (var label in transaction.TransactionLabels)
+        foreach (var label in transaction.TransactionLabelsV2)
         {
             label.IsDeleted = true;
-            _transactionLabelRepository.Update(label);
+            _transactionLabelV2Repository.Update(label);
         }
 
-        var notebookLabels = await
-            _notebookLabelRepository
-                .GetAll()
-                .Where(nl => nl.NotebookId == request.NotebookId)
-                .ToListAsync();
-        
-        foreach (var label in request.Labels)
+        var defaultUserId = await _notebookUserRepository
+            .Get()
+            .Where(nu => nu.NotebookId == request.NotebookId && nu.IsDefault)
+            .Select(nu => nu.UserId)
+            .FirstOrDefaultAsync();
+
+        var userLabels = await _userLabelRepository
+            .GetAll()
+            .Where(ul => ul.UserId == null || ul.UserId == defaultUserId)
+            .ToListAsync();
+
+        var matchingLabelIds = userLabels
+            .Where(ul => request.Labels.Contains(ul.Id))
+            .Select(ul => ul.Id)
+            .ToList();
+
+        foreach (var labelId in matchingLabelIds)
         {
-            if (notebookLabels.Any(nl => nl.Id == label))
+            await _transactionLabelV2Repository.AddAsync(new TransactionLabelV2
             {
-                transaction.TransactionLabels.Add(new TransactionLabel
-                {
-                    NotebookLabelId = label
-                });    
-            }
-            
-            continue;
+                TransactionId = request.TransactionId,
+                UserLabelId = labelId
+            });
         }
-        
-        var oldTransaction =  await
+
+        transaction.IsMatched = matchingLabelIds.Any();
+
+        var oldTransaction = await
             _transactionRepository
                 .Get()
                 .Where(t =>
                     t.NotebookId == request.NotebookId &&
                     t.Id == request.TransactionId)
-                .Include(t => t.TransactionLabels)
+                .Include(t => t.TransactionLabelsV2)
                 .FirstOrDefaultAsync();
 
         var transactionUpdatedDomainEvent = new TransactionUpdatedDomainEvent();
         transactionUpdatedDomainEvent.OldTransaction = oldTransaction;
         transactionUpdatedDomainEvent.NewTransaction = transaction;
-        
+
         transaction.AddEvent(transactionUpdatedDomainEvent);
 
         _transactionRepository.Update(transaction);
         await _transactionRepository.SaveChangesAsync();
-        
-        return BaseResponse.Response(new {}, HttpStatusCode.OK);
+
+        return BaseResponse.Response(new { }, HttpStatusCode.OK);
     }
 }

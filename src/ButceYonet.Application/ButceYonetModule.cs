@@ -36,6 +36,7 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<IUser, User>();
         DotBoilApp.Services.AddScoped<IRecurringTransactionIntervalsService, RecurringTransactionIntervalsService>();
         DotBoilApp.Services.AddHostedService<RecurringTransactionJob>();
+        DotBoilApp.Services.AddHostedService<NotebookLabelToNotebookLabelV2>();
         #region User Plan Rule Validators
 
         DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookCountRuleValidator>(PlanFeatures.NotebookCount
@@ -59,7 +60,7 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddTransient<RecurringTransactionProfile.TransactionResolver>();
 
         DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.NotebookResolver>();
-        DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.NotebookLabelResolver>();
+        DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.UserLabelResolver>();
         DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.CurrencyResolver>();
 
         DotBoilApp.Services.AddTransient<NonCategorizedTransactionReportProfile.NotebookResolver>();

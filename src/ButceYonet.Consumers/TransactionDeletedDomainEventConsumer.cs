@@ -14,12 +14,10 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
 {
     private readonly IServiceProvider _serviceProvider;
 
-    private IRepository<TransactionLabel, ButceYonetDbContext> _transactionLabelRepository;
-    private IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>
-        _nonCategorizedTransactionReportRepository;
-    private IRepository<CategorizedTransactionReport, ButceYonetDbContext> 
-        _categorizedTransactionReportRepository;
-    
+    private IRepository<TransactionLabelV2, ButceYonetDbContext> _transactionLabelV2Repository;
+    private IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
+    private IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> _categorizedTransactionReportRepository;
+
     public TransactionDeletedDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
     {
         _serviceProvider = serviceProvider;
@@ -32,7 +30,7 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
 
         if (!context.Message.Transaction.IsProceed)
             return;
-        
+
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
 
@@ -44,24 +42,24 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
 
     private void InitializeDependencies(IServiceScope scope)
     {
-        _transactionLabelRepository = scope.ServiceProvider.GetService<IRepository<TransactionLabel, ButceYonetDbContext>>();
-        
+        _transactionLabelV2Repository = scope.ServiceProvider.GetService<IRepository<TransactionLabelV2, ButceYonetDbContext>>();
+
         _nonCategorizedTransactionReportRepository = scope.ServiceProvider
             .GetRequiredService<IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>>();
 
         _categorizedTransactionReportRepository = scope.ServiceProvider
-            .GetRequiredService<IRepository<CategorizedTransactionReport, ButceYonetDbContext>>();
+            .GetRequiredService<IRepository<CategorizedTransactionReportV2, ButceYonetDbContext>>();
     }
 
     private async Task ProcessNonCategorizedTransactionReport(TransactionDeletedDomainEvent domainEvent)
     {
         var transactionDate = domainEvent.Transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0,0);
+        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
 
         var nonCategorizedTransactionReport = await
             _nonCategorizedTransactionReportRepository
                 .Get()
-                .Where(p => 
+                .Where(p =>
                     p.NotebookId == domainEvent.Transaction.NotebookId &&
                     p.TransactionType == domainEvent.Transaction.TransactionType &&
                     p.CurrencyId == domainEvent.Transaction.CurrencyId &&
@@ -71,7 +69,6 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
         if (nonCategorizedTransactionReport != null)
         {
             nonCategorizedTransactionReport.Amount -= domainEvent.Transaction.Amount;
-            
             _nonCategorizedTransactionReportRepository.Update(nonCategorizedTransactionReport);
         }
     }
@@ -79,7 +76,7 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
     private async Task ProcessCategorizedTransactionReport(TransactionDeletedDomainEvent domainEvent)
     {
         var transactionDate = domainEvent.Transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0,0);
+        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
 
         var categorizedTransactionReports = await
             _categorizedTransactionReportRepository
@@ -92,7 +89,7 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
                 .ToListAsync();
 
         var transactionLabels = await
-            _transactionLabelRepository
+            _transactionLabelV2Repository
                 .GetAll()
                 .Where(tl => tl.TransactionId == domainEvent.Transaction.Id)
                 .ToListAsync();
@@ -100,8 +97,7 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
         foreach (var transactionLabel in transactionLabels.Where(tl => !tl.IsDeleted))
         {
             var categorizedTransactionReport = categorizedTransactionReports
-                .Where(item => item.NotebookLabelId == transactionLabel.NotebookLabelId)
-                .FirstOrDefault();
+                .FirstOrDefault(item => item.UserLabelId == transactionLabel.UserLabelId);
 
             if (categorizedTransactionReport != null)
             {

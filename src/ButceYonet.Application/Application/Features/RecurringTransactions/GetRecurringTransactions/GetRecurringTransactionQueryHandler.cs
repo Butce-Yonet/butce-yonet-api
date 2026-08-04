@@ -21,21 +21,21 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.GetR
 public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTransactionsQuery, BaseResponse>
 {
     private readonly IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
-    private readonly IRepository<NotebookLabel, ButceYonetDbContext> _notebookLabelRepository;
+    private readonly IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
     private readonly IRepository<Currency, ButceYonetDbContext> _currencyRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    
+
     public GetRecurringTransactionQueryHandler(
         ICache cache,
         IUser user,
         IMapper mapper,
-        ILocalize localize, 
+        ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<Notebook, ButceYonetDbContext> notebookRepository,
-        IRepository<NotebookLabel, ButceYonetDbContext> notebookLabelRepository,
+        IRepository<UserLabel, ButceYonetDbContext> userLabelRepository,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository,
         IRepository<Currency, ButceYonetDbContext> currencyRepository,
@@ -43,7 +43,7 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookRepository = notebookRepository;
-        _notebookLabelRepository = notebookLabelRepository;
+        _userLabelRepository = userLabelRepository;
         _notebookUserRepository = notebookUserRepository;
         _recurringTransactionRepository = recurringTransactionRepository;
         _currencyRepository = currencyRepository;
@@ -71,14 +71,13 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
 
         if (notebook is null)
             throw new BusinessRuleException(""); //TODO:
-        
+
         var paginationRequest = new PaginationFilter(
             int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageNumber"].ToString()),
             int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageSize"].ToString()));
-        
+
         var today = DateTime.UtcNow.Date;
 
-        // Bitmemiş recurring transaction'lar: EndDate yok (sonsuz) veya EndDate bugün/sonrası
         var recurringTransactions = await
             _recurringTransactionRepository
                 .GetAll()
@@ -89,31 +88,41 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
                 .PaginateAsync(paginationRequest);
 
         var currencies = await _currencyRepository.GetAll().ToListAsync();
-        var notebookLabels = await _notebookLabelRepository.GetAll().Where(nl => nl.NotebookId == request.NotebookId).ToListAsync();
+
+        var defaultUserId = await _notebookUserRepository
+            .Get()
+            .Where(nu => nu.NotebookId == request.NotebookId && nu.IsDefault)
+            .Select(nu => nu.UserId)
+            .FirstOrDefaultAsync();
+
+        var userLabels = await _userLabelRepository
+            .GetAll()
+            .Where(ul => ul.UserId == null || ul.UserId == defaultUserId)
+            .ToListAsync();
 
         var recurringTransactionDtos = new List<RecurringTransactionDto>();
 
         foreach (var item in recurringTransactions.Items)
         {
-            var transactions = JsonSerializer.Deserialize<List<Transaction>>(item.StateData);
-            
+            var transactions = JsonSerializer.Deserialize<List<TransactionV2>>(item.StateData);
+
             if (!transactions.Any())
                 continue;
-            
+
             var transaction = transactions.FirstOrDefault();
-            var currency = currencies.Where(c => c.Id == transaction.CurrencyId).FirstOrDefault();
+            var currency = currencies.FirstOrDefault(c => c.Id == transaction.CurrencyId);
             var recurringTransactionDto = _mapper.Map<RecurringTransactionDto>(item, opt =>
             {
                 opt.Items["Notebook"] = notebook;
                 opt.Items["Currency"] = currency;
-                opt.Items["NotebookLabels"] = notebookLabels;
-            } );
-            
+                opt.Items["UserLabels"] = userLabels;
+            });
+
             recurringTransactionDtos.Add(recurringTransactionDto);
         }
-        
+
         return BaseResponse.Response(new PaginatedModel<RecurringTransactionDto>(
-            recurringTransactions.PageNumber, 
+            recurringTransactions.PageNumber,
             recurringTransactions.PageSize,
             recurringTransactions.TotalPages,
             recurringTransactions.TotalRecords,

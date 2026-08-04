@@ -10,4 +10,5 @@ public class CacheKeyConstants
     public static string NotebookLabels => "DotBoil:ButceYonet:Notebook:{NotebookId}:Labels";
     public static string NotebookUsers => "DotBoil:ButceYonet:Notebook:{NotebookId}:Users";
     public static string LandingStats => "DotBoil:ButceYonet:Landing:Stats";
+    public static string UserLabels => "DotBoil:ButceYonet:User:{UserId}:Labels";
 }

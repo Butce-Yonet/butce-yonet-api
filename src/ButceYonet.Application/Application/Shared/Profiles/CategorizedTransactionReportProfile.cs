@@ -10,7 +10,7 @@ public class CategorizedTransactionReportProfile : Profile
     {
         CreateMap<CategorizedTransactionReport, CategorizedTransactionReportDto>()
             .ForMember(p => p.Notebook, p => p.MapFrom<NotebookResolver>())
-            .ForMember(p => p.NotebookLabel, p => p.MapFrom<NotebookLabelResolver>())
+            .ForMember(p => p.UserLabel, p => p.MapFrom<UserLabelResolver>())
             .ForMember(p => p.TransactionType, p => p.MapFrom(p => p.TransactionType))
             .ForMember(p => p.Currency, p => p.MapFrom<CurrencyResolver>())
             .ForMember(p => p.Amount, p => p.MapFrom(p => p.Amount))
@@ -34,20 +34,12 @@ public class CategorizedTransactionReportProfile : Profile
         }
     }
 
-    public class NotebookLabelResolver : IValueResolver<CategorizedTransactionReport, CategorizedTransactionReportDto, NotebookLabelDto>
+    public class UserLabelResolver : IValueResolver<CategorizedTransactionReport, CategorizedTransactionReportDto, UserLabelDto>
     {
-        public NotebookLabelDto Resolve(CategorizedTransactionReport source, CategorizedTransactionReportDto destination,
-            NotebookLabelDto destMember, ResolutionContext context)
+        public UserLabelDto Resolve(CategorizedTransactionReport source, CategorizedTransactionReportDto destination,
+            UserLabelDto destMember, ResolutionContext context)
         {
-            if (source.NotebookLabel is null)
-                return null;
-
-            return new NotebookLabelDto
-            {
-                Id = source.NotebookLabel.Id,
-                Name = source.NotebookLabel.Name,
-                ColorCode = source.NotebookLabel.ColorCode
-            };
+            return null;
         }
     }
 

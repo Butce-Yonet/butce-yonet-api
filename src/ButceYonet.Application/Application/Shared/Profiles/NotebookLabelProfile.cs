@@ -8,7 +8,7 @@ public class NotebookLabelProfile : Profile
 {
     public NotebookLabelProfile()
     {
-        CreateMap<NotebookLabel, NotebookLabelDto>()
+        CreateMap<NotebookLabel, UserLabelDto>()
             .ForMember(m => m.Id, m => m.MapFrom(m => m.Id))
             .ForMember(m => m.Name, m => m.MapFrom(m => m.Name))
             .ForMember(m => m.ColorCode, m => m.MapFrom(m => m.ColorCode));

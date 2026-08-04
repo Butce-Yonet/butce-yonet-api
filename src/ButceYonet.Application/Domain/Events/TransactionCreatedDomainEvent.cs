@@ -24,13 +24,13 @@ public class TransactionCreatedDomainEvent : IEvent
         }
     }
 
-    public Transaction Transaction { get; set; }
+    public TransactionV2 Transaction { get; set; }
 
     public TransactionCreatedDomainEvent()
     {
     }
 
-    public TransactionCreatedDomainEvent(Transaction transaction)
+    public TransactionCreatedDomainEvent(TransactionV2 transaction)
     {
         Transaction = transaction;
     }

@@ -5,7 +5,6 @@ using DotBoil.EFCore;
 using DotBoil.MassTransit.Attributes;
 using DotBoil.MassTransit.Consumers;
 using MassTransit;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Consumers;
@@ -14,10 +13,10 @@ namespace ButceYonet.Consumers;
 public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCreatedDomainEvent>
 {
     private readonly IServiceProvider _serviceProvider;
-    private IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
+    private IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
     private IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
-    private IRepository<CategorizedTransactionReport, ButceYonetDbContext> _categorizedTransactionReportRepository;
-    
+    private IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> _categorizedTransactionReportRepository;
+
     public TransactionCreatedDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
     {
         _serviceProvider = serviceProvider;
@@ -27,7 +26,7 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
     {
         if (!context.Message.Transaction.IsMatched)
             return;
-        
+
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
 
@@ -35,6 +34,7 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
             _transactionRepository
                 .Get()
                 .Where(t => t.Id == context.Message.Transaction.Id)
+                .Include(t => t.TransactionLabelsV2)
                 .FirstOrDefaultAsync();
 
         if (transaction is null)
@@ -52,22 +52,22 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
     private void InitializeDependencies(IServiceScope scope)
     {
         _transactionRepository =
-            scope.ServiceProvider.GetRequiredService<IRepository<Transaction, ButceYonetDbContext>>();
+            scope.ServiceProvider.GetRequiredService<IRepository<TransactionV2, ButceYonetDbContext>>();
         _nonCategorizedTransactionReportRepository = scope.ServiceProvider
             .GetRequiredService<IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>>();
         _categorizedTransactionReportRepository = scope.ServiceProvider
-            .GetRequiredService<IRepository<CategorizedTransactionReport, ButceYonetDbContext>>();
+            .GetRequiredService<IRepository<CategorizedTransactionReportV2, ButceYonetDbContext>>();
     }
 
     private async Task ProcessNonCategorizedTransactionReport(TransactionCreatedDomainEvent domainEvent)
     {
         var transactionDate = domainEvent.Transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0,0);
+        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
 
         var nonCategorizedTransactionReport = await
             _nonCategorizedTransactionReportRepository
                 .Get()
-                .Where(p => 
+                .Where(p =>
                     p.NotebookId == domainEvent.Transaction.NotebookId &&
                     p.TransactionType == domainEvent.Transaction.TransactionType &&
                     p.CurrencyId == domainEvent.Transaction.CurrencyId &&
@@ -96,7 +96,7 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
     private async Task ProcessCategorizedTransactionReport(TransactionCreatedDomainEvent domainEvent)
     {
         var transactionDate = domainEvent.Transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0,0);
+        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
 
         var categorizedTransactionReports = await
             _categorizedTransactionReportRepository
@@ -108,18 +108,18 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
                     p.Term == reportDate)
                 .ToListAsync();
 
-        foreach (var transactionLabel in domainEvent.Transaction.TransactionLabels.Where(tl => !tl.IsDeleted))
+        foreach (var transactionLabel in domainEvent.Transaction.TransactionLabelsV2.Where(tl => !tl.IsDeleted))
         {
             var categorizedTransactionReport =
                 categorizedTransactionReports.FirstOrDefault(p =>
-                    p.NotebookLabelId == transactionLabel.NotebookLabelId);
+                    p.UserLabelId == transactionLabel.UserLabelId);
 
             if (categorizedTransactionReport is null)
             {
-                categorizedTransactionReport = new CategorizedTransactionReport
+                categorizedTransactionReport = new CategorizedTransactionReportV2
                 {
                     NotebookId = domainEvent.Transaction.NotebookId.Value,
-                    NotebookLabelId = transactionLabel.NotebookLabelId,
+                    UserLabelId = transactionLabel.UserLabelId,
                     TransactionType = domainEvent.Transaction.TransactionType,
                     CurrencyId = domainEvent.Transaction.CurrencyId,
                     Term = reportDate
@@ -127,11 +127,11 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
             }
 
             categorizedTransactionReport.Amount += domainEvent.Transaction.Amount;
-            
+
             if (categorizedTransactionReport.Id == default(int))
                 await _categorizedTransactionReportRepository.AddAsync(categorizedTransactionReport);
             else
                 _categorizedTransactionReportRepository.Update(categorizedTransactionReport);
-        }        
+        }
     }
 }

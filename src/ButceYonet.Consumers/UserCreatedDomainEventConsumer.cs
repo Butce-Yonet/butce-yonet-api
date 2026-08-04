@@ -26,6 +26,8 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
     private IRepository<Plan, ButceYonetDbContext> _planRepository;
     private IRepository<UserPlan, ButceYonetDbContext> _userPlanRepository;
     private IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
+    private IRepository<DefaultLabel, ButceYonetDbContext> _defaultLabelRepository;
+    private IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
     private ICache _cache;
     private IRazorRenderer _razorRenderer;
     private IMailSender _mailSender;
@@ -42,6 +44,7 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
         await InitializeUserPlan(context.Message);
+        await InitializeUserLabels(context.Message);
         await InitializeNotebook(context.Message);
         await SendWelcomeMail(context.Message);
     }
@@ -53,6 +56,8 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
         _planRepository = scope.ServiceProvider.GetRequiredService<IRepository<Plan, ButceYonetDbContext>>();
         _userPlanRepository = scope.ServiceProvider.GetRequiredService<IRepository<UserPlan, ButceYonetDbContext>>();
         _notebookRepository = scope.ServiceProvider.GetRequiredService<IRepository<Notebook, ButceYonetDbContext>>();
+        _defaultLabelRepository = scope.ServiceProvider.GetRequiredService<IRepository<DefaultLabel, ButceYonetDbContext>>();
+        _userLabelRepository = scope.ServiceProvider.GetRequiredService<IRepository<UserLabel, ButceYonetDbContext>>();
         _cache = scope.ServiceProvider.GetRequiredService<ICache>();
         _razorRenderer = scope.ServiceProvider.GetRequiredService<IRazorRenderer>();
         _mailSender = scope.ServiceProvider.GetRequiredService<IMailSender>();
@@ -85,6 +90,32 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
 
         await _userPlanRepository.AddAsync(userPlan);
         await _userRepository.SaveChangesAsync();
+    }
+
+    private async Task InitializeUserLabels(UserCreatedDomainEvent @event)
+    {
+        var defaultLabels = await _cache.GetOrSetAsync(CacheKeyConstants.DefaultNotebookLabels, async () =>
+        {
+            return await _defaultLabelRepository.GetAll().ToListAsync();
+        }, CacheIntervalConstants.DefaultNotebookLabels);
+
+        if (!defaultLabels.Any())
+            return;
+
+        var user = await _userRepository.Get().Where(p => p.Email == @event.Email).FirstOrDefaultAsync();
+
+        if (user is null)
+            return;
+
+        var userLabels = defaultLabels.Select(dl => new UserLabel
+        {
+            UserId = user.Id,
+            Name = dl.Name,
+            ColorCode = dl.ColorCode
+        }).ToList();
+
+        await _userLabelRepository.AddRangeAsync(userLabels);
+        await _userLabelRepository.SaveChangesAsync();
     }
 
     private async Task InitializeNotebook(UserCreatedDomainEvent @event)

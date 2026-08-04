@@ -55,24 +55,25 @@ public class RecurringTransactionProfile : Profile
         {
             Notebook notebook = null;
             Currency currency = null;
-            List<NotebookLabel> notebookLabels = new List<NotebookLabel>();
+            List<UserLabel> userLabels = new List<UserLabel>();
+
             if (context.Items.TryGetValue("Notebook", out object notebookObj))
                 notebook = (Notebook)notebookObj;
             if (context.Items.TryGetValue("Currency", out object currencyObj))
                 currency = (Currency)currencyObj;
-            if (context.Items.TryGetValue("NotebookLabels", out object notebookLabelsObj))
-                notebookLabels = (List<NotebookLabel>)notebookLabelsObj;
+            if (context.Items.TryGetValue("UserLabels", out object userLabelsObj))
+                userLabels = (List<UserLabel>)userLabelsObj;
 
             if (notebook is null || currency is null)
                 return null;
 
-            var transactions = JsonSerializer.Deserialize<List<Transaction>>(source.StateData);
+            var transactions = JsonSerializer.Deserialize<List<TransactionV2>>(source.StateData);
 
             if (!transactions.Any())
                 return null;
-            
+
             var transaction = transactions.FirstOrDefault();
-            
+
             var dto = new TransactionDto
             {
                 NotebookId = notebook.Id,
@@ -98,17 +99,17 @@ public class RecurringTransactionProfile : Profile
                     Symbol = currency.Symbol,
                     Rank = currency.Rank
                 },
-                Labels = new List<NotebookLabelDto>()
+                Labels = new List<UserLabelDto>()
             };
 
-            foreach (var labels in transaction.TransactionLabels)
+            foreach (var transactionLabel in transaction.TransactionLabelsV2 ?? new List<TransactionLabelV2>())
             {
-                var label = notebookLabels.FirstOrDefault(nl => nl.Id == labels.NotebookLabelId);
+                var label = userLabels.FirstOrDefault(ul => ul.Id == transactionLabel.UserLabelId);
 
                 if (label is null)
                     continue;
 
-                dto.Labels.Add(new NotebookLabelDto
+                dto.Labels.Add(new UserLabelDto
                 {
                     Id = label.Id,
                     Name = label.Name,

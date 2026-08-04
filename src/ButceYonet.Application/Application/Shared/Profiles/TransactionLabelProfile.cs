@@ -8,9 +8,9 @@ public class TransactionLabelProfile : Profile
 {
     public TransactionLabelProfile()
     {
-        CreateMap<TransactionLabel, NotebookLabelDto>()
-            .ForMember(p => p.Id, p => p.MapFrom(p => p.NotebookLabel.Id))
-            .ForMember(p => p.Name, p => p.MapFrom(p => p.NotebookLabel.Name))
-            .ForMember(p => p.ColorCode, p => p.MapFrom(p => p.NotebookLabel.ColorCode));
+        CreateMap<TransactionLabelV2, UserLabelDto>()
+            .ForMember(p => p.Id, p => p.MapFrom(p => p.UserLabel.Id))
+            .ForMember(p => p.Name, p => p.MapFrom(p => p.UserLabel.Name))
+            .ForMember(p => p.ColorCode, p => p.MapFrom(p => p.UserLabel.ColorCode));
     }
 }
