@@ -16,11 +16,11 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
 {
     private readonly IServiceProvider _serviceProvider;
     private IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
-    private IRepository<CategorizedTransactionReport, ButceYonetDbContext> _categorizedTransactionReportRepository;
+    private IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> _categorizedTransactionReportRepository;
 
     private ConcurrentBag<NonCategorizedTransactionReport> _nonCategorizedTransactionReportBag;
-    private ConcurrentBag<CategorizedTransactionReport> _categorizedTransactionReportBag;
-    
+    private ConcurrentBag<CategorizedTransactionReportV2> _categorizedTransactionReportBag;
+
     public TransactionUpdatedDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
     {
         _serviceProvider = serviceProvider;
@@ -33,13 +33,13 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
 
         if (!context.Message.NewTransaction.IsProceed)
             return;
-        
+
         using var scope = _serviceProvider.CreateScope();
         InitializeDependencies(scope);
 
         await ProcessNonCategorizedTransactionReport(context.Message.OldTransaction, true);
         await ProcessCategorizedTransactionReport(context.Message.OldTransaction, true);
-        
+
         await ProcessNonCategorizedTransactionReport(context.Message.NewTransaction, false);
         await ProcessCategorizedTransactionReport(context.Message.NewTransaction, false);
 
@@ -58,23 +58,23 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
             else
                 _categorizedTransactionReportRepository.Update(categorizedTransactionReport);
         }
-        
+
         await _nonCategorizedTransactionReportRepository.SaveChangesAsync();
     }
 
     private void InitializeDependencies(IServiceScope serviceScope)
     {
         _nonCategorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>>();
-        _categorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<CategorizedTransactionReport, ButceYonetDbContext>>();
+        _categorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<CategorizedTransactionReportV2, ButceYonetDbContext>>();
         _nonCategorizedTransactionReportBag = new ConcurrentBag<NonCategorizedTransactionReport>();
-        _categorizedTransactionReportBag = new ConcurrentBag<CategorizedTransactionReport>();
+        _categorizedTransactionReportBag = new ConcurrentBag<CategorizedTransactionReportV2>();
     }
 
-    private async Task ProcessNonCategorizedTransactionReport(Transaction transaction, bool isOldTransaction)
+    private async Task ProcessNonCategorizedTransactionReport(TransactionV2 transaction, bool isOldTransaction)
     {
         var transactionDate = transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0,0);
-        
+        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
+
         var nonCategorizedTransactionReport = default(NonCategorizedTransactionReport);
 
         nonCategorizedTransactionReport = _nonCategorizedTransactionReportBag
@@ -84,7 +84,7 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
                 item.CurrencyId == transaction.CurrencyId &&
                 item.Term == reportDate)
             .FirstOrDefault();
-        
+
         if (nonCategorizedTransactionReport is null)
         {
             nonCategorizedTransactionReport = await _nonCategorizedTransactionReportRepository
@@ -106,27 +106,27 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
                     Term = reportDate
                 };
             }
-            
+
             _nonCategorizedTransactionReportBag.Add(nonCategorizedTransactionReport);
         }
-        
+
         if (isOldTransaction)
             nonCategorizedTransactionReport.Amount -= transaction.Amount;
         else
             nonCategorizedTransactionReport.Amount += transaction.Amount;
     }
 
-    private async Task ProcessCategorizedTransactionReport(Transaction transaction, bool isOldTransaction)
+    private async Task ProcessCategorizedTransactionReport(TransactionV2 transaction, bool isOldTransaction)
     {
         var transactionDate = transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0,0);
-        
-        foreach(var transactionLabel in transaction.TransactionLabels.Where(tl => !tl.IsDeleted))
+        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
+
+        foreach (var transactionLabel in transaction.TransactionLabelsV2.Where(tl => !tl.IsDeleted))
         {
             var categorizedTransactionReport = _categorizedTransactionReportBag
                 .Where(item =>
                     item.NotebookId == transaction.NotebookId &&
-                    item.NotebookLabelId == transactionLabel.NotebookLabelId &&
+                    item.UserLabelId == transactionLabel.UserLabelId &&
                     item.TransactionType == transaction.TransactionType &&
                     item.CurrencyId == transaction.CurrencyId &&
                     item.Term == reportDate)
@@ -138,7 +138,7 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
                     .Get()
                     .Where(item =>
                         item.NotebookId == transaction.NotebookId &&
-                        item.NotebookLabelId == transactionLabel.NotebookLabelId &&
+                        item.UserLabelId == transactionLabel.UserLabelId &&
                         item.TransactionType == transaction.TransactionType &&
                         item.CurrencyId == transaction.CurrencyId &&
                         item.Term == reportDate)
@@ -146,19 +146,19 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
 
                 if (categorizedTransactionReport is null)
                 {
-                    categorizedTransactionReport = new CategorizedTransactionReport
+                    categorizedTransactionReport = new CategorizedTransactionReportV2
                     {
                         NotebookId = transaction.NotebookId.Value,
-                        NotebookLabelId = transactionLabel.NotebookLabelId,
+                        UserLabelId = transactionLabel.UserLabelId,
                         TransactionType = transaction.TransactionType,
                         CurrencyId = transaction.CurrencyId,
                         Term = reportDate
                     };
                 }
-                
+
                 _categorizedTransactionReportBag.Add(categorizedTransactionReport);
             }
-            
+
             if (isOldTransaction)
                 categorizedTransactionReport.Amount -= transaction.Amount;
             else

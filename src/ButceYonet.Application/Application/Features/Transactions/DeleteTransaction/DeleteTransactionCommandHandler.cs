@@ -10,7 +10,6 @@ using DotBoil.EFCore;
 using DotBoil.Entities;
 using DotBoil.Localization;
 using DotBoil.Parameter;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Application.Application.Features.Transactions.DeleteTransaction;
@@ -18,17 +17,17 @@ namespace ButceYonet.Application.Application.Features.Transactions.DeleteTransac
 public class DeleteTransactionCommandHandler : BaseHandler<DeleteTransactionCommand, BaseResponse>
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
-    
+    private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
+
     public DeleteTransactionCommandHandler(
         ICache cache,
-        IUser user, 
+        IUser user,
         IMapper mapper,
-        ILocalize localize, 
-        IParameterManager parameter, 
+        ILocalize localize,
+        IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<Transaction, ButceYonetDbContext> transactionRepository) 
+        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
@@ -55,9 +54,9 @@ public class DeleteTransactionCommandHandler : BaseHandler<DeleteTransactionComm
                     t.NotebookId == request.NotebookId &&
                     t.Id == request.TransactionId)
                 .FirstOrDefaultAsync();
-        
+
         if (transaction is null)
-            throw new NotFoundException(typeof(Transaction));
+            throw new NotFoundException(typeof(TransactionV2));
 
         var transactionDeletedDomainEvent = new TransactionDeletedDomainEvent(transaction);
         transaction.AddEvent(transactionDeletedDomainEvent);
@@ -65,7 +64,7 @@ public class DeleteTransactionCommandHandler : BaseHandler<DeleteTransactionComm
         transaction.IsDeleted = true;
         _transactionRepository.Update(transaction);
         await _transactionRepository.SaveChangesAsync();
-            
-        return BaseResponse.Response(new {}, HttpStatusCode.OK);
+
+        return BaseResponse.Response(new { }, HttpStatusCode.OK);
     }
 }

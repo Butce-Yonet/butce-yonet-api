@@ -17,23 +17,23 @@ namespace ButceYonet.Application.Application.Features.Transactions.CreateTransac
 
 public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionCommand, BaseResponse>
 {
-    private readonly IRepository<NotebookLabel, ButceYonetDbContext> _notebookLabelRepository;
+    private readonly IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
-    
+    private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
+
     public CreateTransactionCommandHandler(
         ICache cache,
-        IUser user, 
+        IUser user,
         IMapper mapper,
-        ILocalize localize, 
+        ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookLabel, ButceYonetDbContext> notebookLabelRepository,
+        IRepository<UserLabel, ButceYonetDbContext> userLabelRepository,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<Transaction, ButceYonetDbContext> transactionRepository)
+        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookLabelRepository = notebookLabelRepository;
+        _userLabelRepository = userLabelRepository;
         _notebookUserRepository = notebookUserRepository;
         _transactionRepository = transactionRepository;
     }
@@ -53,20 +53,32 @@ public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionComm
 
         var notebookTransactionCountValidateParameters = new Dictionary<string, string>
         {
-            { "NotebookId", request.NotebookId.ToString()}
+            { "NotebookId", request.NotebookId.ToString() }
         };
 
         await _userPlanValidator.Validate(PlanFeatures.NotebookTransactionCount, notebookTransactionCountValidateParameters);
 
-        var notebookLabels = await
-            _notebookLabelRepository
-                .GetAll()
-                .Where(nl => nl.NotebookId == request.NotebookId)
-                .ToListAsync();
+        var defaultUserId = await _notebookUserRepository
+            .Get()
+            .Where(nu => nu.NotebookId == request.NotebookId && nu.IsDefault)
+            .Select(nu => nu.UserId)
+            .FirstOrDefaultAsync();
+
+        var userLabels = await _userLabelRepository
+            .GetAll()
+            .Where(ul => ul.UserId == null || ul.UserId == defaultUserId)
+            .ToListAsync();
+
+        var pendingLabels = new List<(Transaction transaction, List<int> labelIds)>();
 
         foreach (var requestItem in request.Transactions)
         {
-            var transaction = new Transaction
+            var matchingLabelIds = userLabels
+                .Where(ul => requestItem.Labels.Contains(ul.Id))
+                .Select(ul => ul.Id)
+                .ToList();
+
+            var transaction = new TransactionV2
             {
                 NotebookId = request.NotebookId,
                 ExternalId = Guid.NewGuid().ToString(),
@@ -75,17 +87,13 @@ public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionComm
                 Amount = requestItem.Amount,
                 CurrencyId = requestItem.CurrencyId,
                 TransactionType = requestItem.TransactionType,
-                TransactionDate = requestItem.TransactionDate
-            };
-
-            transaction.TransactionLabels = notebookLabels
-                .Where(nl => requestItem.Labels.Contains(nl.Id))
-                .Select(nl => new TransactionLabel
+                TransactionDate = requestItem.TransactionDate,
+                IsMatched = matchingLabelIds.Any(),
+                TransactionLabelsV2 = matchingLabelIds.Select(ul => new TransactionLabelV2()
                 {
-                    NotebookLabelId = nl.Id
-                }).ToList();
-
-            transaction.IsMatched = transaction.TransactionLabels.Any();
+                    UserLabelId = ul
+                }).ToList()
+            };
 
             var transactionCreatedDomainEvent = new TransactionCreatedDomainEvent(transaction);
             transaction.AddEvent(transactionCreatedDomainEvent);
@@ -94,7 +102,7 @@ public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionComm
         }
 
         await _transactionRepository.SaveChangesAsync();
-        
-        return BaseResponse.Response(new {}, HttpStatusCode.OK);
+
+        return BaseResponse.Response(new { }, HttpStatusCode.OK);
     }
 }

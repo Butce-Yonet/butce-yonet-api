@@ -17,8 +17,8 @@ namespace ButceYonet.Application.Application.Features.Transactions.GetTransactio
 public class GetTransactionQueryHandler : BaseHandler<GetTransactionQuery, BaseResponse>
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
-    
+    private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
+
     public GetTransactionQueryHandler(
         ICache cache,
         IUser user,
@@ -27,7 +27,7 @@ public class GetTransactionQueryHandler : BaseHandler<GetTransactionQuery, BaseR
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<Transaction, ButceYonetDbContext> transactionRepository) 
+        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
@@ -36,10 +36,10 @@ public class GetTransactionQueryHandler : BaseHandler<GetTransactionQuery, BaseR
 
     public override async Task<BaseResponse> ExecuteRequest(GetTransactionQuery request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await 
+        var isNotebookUser = await
             _notebookUserRepository
                 .Get()
-                .Where(nu => 
+                .Where(nu =>
                     nu.NotebookId == request.NotebookId &&
                     nu.UserId == _user.Id)
                 .AnyAsync();
@@ -55,15 +55,15 @@ public class GetTransactionQueryHandler : BaseHandler<GetTransactionQuery, BaseR
                     t.Id == request.TransactionId)
                 .Include(t => t.Notebook)
                 .Include(t => t.Currency)
-                .Include(t => t.TransactionLabels)
-                .ThenInclude(tl => tl.NotebookLabel)
+                .Include(t => t.TransactionLabelsV2)
+                .ThenInclude(tl => tl.UserLabel)
                 .FirstOrDefaultAsync();
 
         if (transaction is null)
-            throw new NotFoundException(typeof(Transaction));
+            throw new NotFoundException(typeof(TransactionV2));
 
         var responseDto = _mapper.Map<TransactionDto>(transaction);
-        
+
         return BaseResponse.Response(responseDto, HttpStatusCode.OK);
     }
 }

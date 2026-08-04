@@ -12,9 +12,12 @@ public class NotebookLabel : BaseEntity
     public virtual ICollection<TransactionLabel> TransactionLabels { get; set; }
     public virtual ICollection<CategorizedTransactionReport> CategorizedTransactionReports { get; set; }
 
+    public virtual ICollection<NotebookLabelToUserLabel> NotebookLabelToUserLabels { get; set; }
+
     public NotebookLabel()
     {
         TransactionLabels = new List<TransactionLabel>();
         CategorizedTransactionReports = new List<CategorizedTransactionReport>();
+        NotebookLabelToUserLabels = new List<NotebookLabelToUserLabel>();
     }
 }

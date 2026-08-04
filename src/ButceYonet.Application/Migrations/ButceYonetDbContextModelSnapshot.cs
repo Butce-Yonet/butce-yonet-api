@@ -168,6 +168,59 @@ namespace ButceYonet.Application.Migrations
                     b.ToTable("CategorizedTransactionReport", (string)null);
                 });
 
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.CategorizedTransactionReportV2", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ModifyUser")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("NotebookId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Term")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserLabelId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("NotebookId");
+
+                    b.HasIndex("UserLabelId");
+
+                    b.ToTable("CategorizedTransactionReportV2", (string)null);
+                });
+
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.Currency", b =>
                 {
                     b.Property<int>("Id")
@@ -384,6 +437,45 @@ namespace ButceYonet.Application.Migrations
                     b.HasIndex("NotebookId");
 
                     b.ToTable("NotebookLabels", (string)null);
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.NotebookLabelToUserLabel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ModifyUser")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("NotebookLabelId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserLabelId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotebookLabelId");
+
+                    b.HasIndex("UserLabelId");
+
+                    b.ToTable("NotebookLabelToUserLabels", (string)null);
                 });
 
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.NotebookUser", b =>
@@ -687,6 +779,166 @@ namespace ButceYonet.Application.Migrations
                     b.ToTable("TransactionLabels", (string)null);
                 });
 
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.TransactionLabelV2", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ModifyUser")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("TransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TransactionV2Id")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserLabelId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("TransactionV2Id");
+
+                    b.HasIndex("UserLabelId");
+
+                    b.ToTable("TransactionLabelsV2", (string)null);
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.TransactionV2", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BankAccountId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsMatched")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsProceed")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ModifyUser")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<int?>("NotebookId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("NotebookId");
+
+                    b.ToTable("TransactionsV2", (string)null);
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.UserLabel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("ColorCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ModifyUser")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserLabels", (string)null);
+                });
+
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.UserPlan", b =>
                 {
                     b.Property<int>("Id")
@@ -773,6 +1025,33 @@ namespace ButceYonet.Application.Migrations
                     b.Navigation("NotebookLabel");
                 });
 
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.CategorizedTransactionReportV2", b =>
+                {
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Notebook", "Notebook")
+                        .WithMany()
+                        .HasForeignKey("NotebookId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.UserLabel", "UserLabel")
+                        .WithMany("CategorizedTransactionReportV2s")
+                        .HasForeignKey("UserLabelId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Currency");
+
+                    b.Navigation("Notebook");
+
+                    b.Navigation("UserLabel");
+                });
+
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.NonCategorizedTransactionReport", b =>
                 {
                     b.HasOne("ButceYonet.Application.Domain.Entities.Currency", "Currency")
@@ -801,6 +1080,25 @@ namespace ButceYonet.Application.Migrations
                         .IsRequired();
 
                     b.Navigation("Notebook");
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.NotebookLabelToUserLabel", b =>
+                {
+                    b.HasOne("ButceYonet.Application.Domain.Entities.NotebookLabel", "NotebookLabel")
+                        .WithMany("NotebookLabelToUserLabels")
+                        .HasForeignKey("NotebookLabelId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.UserLabel", "UserLabel")
+                        .WithMany("NotebookLabelToUserLabels")
+                        .HasForeignKey("UserLabelId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("NotebookLabel");
+
+                    b.Navigation("UserLabel");
                 });
 
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.NotebookUser", b =>
@@ -869,6 +1167,57 @@ namespace ButceYonet.Application.Migrations
                     b.Navigation("Transaction");
                 });
 
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.TransactionLabelV2", b =>
+                {
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Transaction", "Transaction")
+                        .WithMany("TransactionLabelsV2")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.TransactionV2", "TransactionV2")
+                        .WithMany("TransactionLabelsV2")
+                        .HasForeignKey("TransactionV2Id")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.UserLabel", "UserLabel")
+                        .WithMany("TransactionLabelsV2")
+                        .HasForeignKey("UserLabelId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Transaction");
+
+                    b.Navigation("TransactionV2");
+
+                    b.Navigation("UserLabel");
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.TransactionV2", b =>
+                {
+                    b.HasOne("ButceYonet.Application.Domain.Entities.BankAccount", "BankAccount")
+                        .WithMany()
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Notebook", "Notebook")
+                        .WithMany()
+                        .HasForeignKey("NotebookId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("BankAccount");
+
+                    b.Navigation("Currency");
+
+                    b.Navigation("Notebook");
+                });
+
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.UserPlan", b =>
                 {
                     b.HasOne("ButceYonet.Application.Domain.Entities.Plan", "Plan")
@@ -918,6 +1267,8 @@ namespace ButceYonet.Application.Migrations
                 {
                     b.Navigation("CategorizedTransactionReports");
 
+                    b.Navigation("NotebookLabelToUserLabels");
+
                     b.Navigation("TransactionLabels");
                 });
 
@@ -931,6 +1282,22 @@ namespace ButceYonet.Application.Migrations
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.Transaction", b =>
                 {
                     b.Navigation("TransactionLabels");
+
+                    b.Navigation("TransactionLabelsV2");
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.TransactionV2", b =>
+                {
+                    b.Navigation("TransactionLabelsV2");
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.UserLabel", b =>
+                {
+                    b.Navigation("CategorizedTransactionReportV2s");
+
+                    b.Navigation("NotebookLabelToUserLabels");
+
+                    b.Navigation("TransactionLabelsV2");
                 });
 #pragma warning restore 612, 618
         }

@@ -8,7 +8,7 @@ public class TransactionProfile : Profile
 {
     public TransactionProfile()
     {
-        CreateMap<Transaction, TransactionDto>()
+        CreateMap<TransactionV2, TransactionDto>()
             .ForMember(p => p.Id, p => p.MapFrom(p => p.Id))
             .ForMember(p => p.NotebookId, p => p.MapFrom(p => p.NotebookId))
             .ForMember(p => p.Name, p => p.MapFrom(p => p.Name))
@@ -20,6 +20,6 @@ public class TransactionProfile : Profile
             .ForMember(p => p.TransactionDate, p => p.MapFrom(p => p.TransactionDate))
             .ForMember(p => p.Notebook, p => p.MapFrom(p => p.Notebook))
             .ForMember(p => p.Currency, p => p.MapFrom(p => p.Currency))
-            .ForMember(p => p.Labels, p => p.MapFrom(p => p.TransactionLabels));
+            .ForMember(p => p.Labels, p => p.MapFrom(p => p.TransactionLabelsV2));
     }
 }

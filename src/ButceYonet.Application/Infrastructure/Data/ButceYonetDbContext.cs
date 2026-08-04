@@ -23,6 +23,11 @@ public class ButceYonetDbContext : EFCoreDbContext
     public DbSet<CategorizedTransactionReport> CategorizedTransactionReports { get; set; }
     public DbSet<NonCategorizedTransactionReport> NonCategorizedTransactionReports { get; set; }
     public DbSet<RecurringTransaction> RecurringTransactions { get; set; }
+    public DbSet<UserLabel> UserLabels { get; set; }
+    public DbSet<NotebookLabelToUserLabel> NotebookLabelToUserLabels { get; set; }
+    public DbSet<TransactionLabelV2> TransactionLabelsV2 { get; set; }
+    public DbSet<TransactionV2> TransactionsV2 { get; set; }
+    public DbSet<CategorizedTransactionReportV2> CategorizedTransactionReportsV2 { get; set; }
     
     public ButceYonetDbContext(IServiceProvider serviceProvider) : base(serviceProvider)
     {

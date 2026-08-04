@@ -59,7 +59,7 @@ public class RecurringTransactionJob : BackgroundService
     {
         using var scope = _serviceProvider.CreateAsyncScope();
         var recurringTransactionRepository = scope.ServiceProvider.GetService<IRepository<RecurringTransaction, ButceYonetDbContext>>();
-        var transactionRepository = scope.ServiceProvider.GetService<IRepository<Transaction, ButceYonetDbContext>>();
+        var transactionRepository = scope.ServiceProvider.GetService<IRepository<TransactionV2, ButceYonetDbContext>>();
         var recurringTransactionIntervalsService = scope.ServiceProvider.GetService<IRecurringTransactionIntervalsService>();
 
         var today = DateTime.UtcNow.Date;
@@ -79,7 +79,7 @@ public class RecurringTransactionJob : BackgroundService
 
         foreach (var recurringTransaction in recurringTransactions)
         {
-            var transactions = JsonSerializer.Deserialize<List<Transaction>>(recurringTransaction.StateData);
+            var transactions = JsonSerializer.Deserialize<List<TransactionV2>>(recurringTransaction.StateData);
 
             if (!transactions.Any())
             {
@@ -93,7 +93,7 @@ public class RecurringTransactionJob : BackgroundService
             
             var firstTransaction = transactions.FirstOrDefault();
 
-            var transaction = new Transaction
+            var transaction = new TransactionV2()
             {
                 NotebookId = firstTransaction.NotebookId,
                 ExternalId = Guid.NewGuid().ToString(),
@@ -105,13 +105,13 @@ public class RecurringTransactionJob : BackgroundService
                 TransactionDate = DateTime.Now
             };
 
-            transaction.TransactionLabels = new List<TransactionLabel>();
-            transaction.TransactionLabels = firstTransaction.TransactionLabels.Select(tl => new TransactionLabel
+            transaction.TransactionLabelsV2 = new List<TransactionLabelV2>();
+            transaction.TransactionLabelsV2 = firstTransaction.TransactionLabelsV2.Select(tl => new TransactionLabelV2
             {
-                NotebookLabelId = tl.NotebookLabelId
+                UserLabelId = tl.UserLabelId
             }).ToList();
             
-            transaction.IsMatched = transaction.TransactionLabels.Any();
+            transaction.IsMatched = transaction.TransactionLabelsV2.Any();
 
             var transactionCreatedDomainEvent = new TransactionCreatedDomainEvent(transaction);
             transaction.AddEvent(transactionCreatedDomainEvent);

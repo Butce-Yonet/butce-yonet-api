@@ -17,5 +17,5 @@ public class TransactionDto
 
     public NotebookDto Notebook { get; set; }
     public CurrencyDto Currency { get; set; }
-    public List<NotebookLabelDto> Labels { get; set; }
+    public List<UserLabelDto> Labels { get; set; }
 }

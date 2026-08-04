@@ -19,7 +19,7 @@ namespace ButceYonet.Application.Application.Features.CategorySpendingReports.Ge
 public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpendingReportQuery, BaseResponse>
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    private readonly IRepository<CategorizedTransactionReport, ButceYonetDbContext> _categorizedTransactionReportRepository;
+    private readonly IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> _categorizedTransactionReportRepository;
     private readonly IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
 
     public GetCategorySpendingReportQueryHandler(
@@ -30,7 +30,7 @@ public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpen
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<CategorizedTransactionReport, ButceYonetDbContext> categorizedTransactionReportRepository,
+        IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> categorizedTransactionReportRepository,
         IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> nonCategorizedTransactionReportRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
@@ -60,7 +60,7 @@ public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpen
 
         var currentCategorized = await categorizedBaseQuery
             .Where(ctr => ctr.Term >= startDate && ctr.Term <= endDate)
-            .Include(ctr => ctr.NotebookLabel)
+            .Include(ctr => ctr.UserLabel)
             .ToListAsync(cancellationToken);
 
         // Genel toplam gider (kategori bağımsız) NonCategorizedTransactionReport üzerinden
@@ -82,14 +82,14 @@ public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpen
             ? await categorizedBaseQuery
                 .Where(ctr => ctr.Term >= prevStartDate && ctr.Term <= prevEndDate)
                 .ToListAsync(cancellationToken)
-            : new List<CategorizedTransactionReport>();
+            : new List<CategorizedTransactionReportV2>();
 
         var previousByLabel = previousCategorized
-            .GroupBy(i => i.NotebookLabelId)
+            .GroupBy(i => i.UserLabelId)
             .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount));
 
         var items = currentCategorized
-            .GroupBy(i => i.NotebookLabelId)
+            .GroupBy(i => i.UserLabelId)
             .Select(g =>
             {
                 var amount = g.Sum(x => x.Amount);
@@ -101,7 +101,7 @@ public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpen
 
                 return new CategorySpendingReportItemDto
                 {
-                    CategoryName = g.First().NotebookLabel.Name,
+                    CategoryName = g.First().UserLabel.Name,
                     Amount = amount,
                     Percentage = percentage,
                     PreviousAmount = prevAmount

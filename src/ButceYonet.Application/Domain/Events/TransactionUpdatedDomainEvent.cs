@@ -24,7 +24,7 @@ public class TransactionUpdatedDomainEvent : IEvent
         }
     }
     
-    public Transaction OldTransaction { get; set; }
-    public Transaction NewTransaction { get; set; }
+    public TransactionV2 OldTransaction { get; set; }
+    public TransactionV2 NewTransaction { get; set; }
     
 }

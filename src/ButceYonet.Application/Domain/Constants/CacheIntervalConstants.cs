@@ -10,4 +10,5 @@ public class CacheIntervalConstants
     public static TimeSpan NotebookLabels => TimeSpan.FromDays(1);
     public static TimeSpan NotebookUsers => TimeSpan.FromDays(1);
     public static TimeSpan LandingStats => TimeSpan.FromMinutes(15);
+    public static TimeSpan UserLabels => TimeSpan.FromDays(1);
 }

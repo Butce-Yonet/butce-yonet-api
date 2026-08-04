@@ -18,18 +18,17 @@ namespace ButceYonet.Application.Application.Features.CategorizedTransactionRepo
 public class GetCategorizedTransactionReportQueryHandler : BaseHandler<GetCategorizedTransactionReportQuery, BaseResponse>
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    private readonly IRepository<CategorizedTransactionReport, ButceYonetDbContext>
-        _categorizedTransactionReportRepository;
-    
+    private readonly IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> _categorizedTransactionReportRepository;
+
     public GetCategorizedTransactionReportQueryHandler(
         ICache cache,
         IUser user,
-        IMapper mapper, 
+        IMapper mapper,
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<CategorizedTransactionReport, ButceYonetDbContext> categorizedTransactionReportRepository)
+        IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> categorizedTransactionReportRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookUserRepository = notebookUserRepository;
@@ -38,7 +37,7 @@ public class GetCategorizedTransactionReportQueryHandler : BaseHandler<GetCatego
 
     public override async Task<BaseResponse> ExecuteRequest(GetCategorizedTransactionReportQuery request, CancellationToken cancellationToken)
     {
-        var report =  await this._cache.GetOrSetAsync<List<CategorizedTransactionReportDto>>(request.ToString(), async () =>
+        var report = await this._cache.GetOrSetAsync<List<CategorizedTransactionReportDto>>(request.ToString(), async () =>
         {
             var isNotebookUser = await
                 _notebookUserRepository
@@ -50,31 +49,31 @@ public class GetCategorizedTransactionReportQueryHandler : BaseHandler<GetCatego
 
             if (!isNotebookUser)
                 return new List<CategorizedTransactionReportDto>();
-            
+
             var reportItems = await
                 _categorizedTransactionReportRepository
                     .GetAll()
                     .Where(ctr =>
                         ctr.NotebookId == request.NotebookId &&
                         ctr.TransactionType == request.TransactionTypes)
-                    .WhereIf(request.NotebookLabelId.HasValue, ctr => ctr.NotebookLabelId == request.NotebookLabelId)
+                    .WhereIf(request.NotebookLabelId.HasValue, ctr => ctr.UserLabelId == request.NotebookLabelId)
                     .WhereIf(request.CurrencyId.HasValue, ctr => ctr.CurrencyId == request.CurrencyId)
                     .WhereIf(request.StartDate.HasValue, ctr => ctr.Term >= request.StartDate)
                     .WhereIf(request.EndDate.HasValue, ctr => ctr.Term <= request.EndDate)
                     .Include(ctr => ctr.Notebook)
-                    .Include(ctr => ctr.NotebookLabel)
+                    .Include(ctr => ctr.UserLabel)
                     .Include(ctr => ctr.Currency)
                     .ToListAsync();
 
             var responseModel = reportItems
-                .GroupBy(ctr => new { ctr.NotebookLabelId, ctr.CurrencyId, ctr.Term.Year, ctr.Term.Month })
+                .GroupBy(ctr => new { ctr.UserLabelId, ctr.CurrencyId, ctr.Term.Year, ctr.Term.Month })
                 .Select(g =>
                 {
                     var s = g.First();
                     return new CategorizedTransactionReportDto
                     {
                         Notebook = new NotebookDto { Id = s.Notebook.Id, Name = s.Notebook.Name, IsDefault = s.Notebook.IsDefault },
-                        NotebookLabel = new NotebookLabelDto { Id = s.NotebookLabel.Id, Name = s.NotebookLabel.Name, ColorCode = s.NotebookLabel.ColorCode },
+                        UserLabel = new UserLabelDto { Id = s.UserLabel.Id, Name = s.UserLabel.Name, ColorCode = s.UserLabel.ColorCode },
                         TransactionType = s.TransactionType,
                         Currency = new CurrencyDto { Id = s.Currency.Id, Code = s.Currency.Code, Name = s.Currency.Name, Symbol = s.Currency.Symbol, IsSymbolRight = s.Currency.IsSymbolRight, Rank = s.Currency.Rank },
                         Amount = g.Sum(x => x.Amount),
@@ -85,8 +84,8 @@ public class GetCategorizedTransactionReportQueryHandler : BaseHandler<GetCatego
                 .ToList();
 
             return responseModel;
-        }, TimeSpan.FromMinutes(15));
-        
+        }, TimeSpan.FromSeconds(5));
+
         return BaseResponse.Response(report, HttpStatusCode.OK);
     }
 }

@@ -19,18 +19,18 @@ namespace ButceYonet.Application.Application.Features.Transactions.GetTransactio
 public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, BaseResponse>
 {
     private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
+    private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
     private IHttpContextAccessor _httpContextAccessor;
-    
+
     public GetTransactionsQueryHandler(
-        ICache cache, 
-        IUser user, 
+        ICache cache,
+        IUser user,
         IMapper mapper,
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<Transaction, ButceYonetDbContext> transactionRepository,
+        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository,
         IHttpContextAccessor httpContextAccessor)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
@@ -48,24 +48,18 @@ public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, Bas
                     nu.NotebookId == request.NotebookId &&
                     nu.UserId == _user.Id)
                 .AnyAsync();
-        
+
         if (!isNotebookUser)
             throw new BusinessRuleException("User is not in notebook"); //TODO:
 
-        var overrideRequest = new GetTransactionsQuery();
-        overrideRequest.NotebookId = request.NotebookId;
-        overrideRequest.StartTime = request.StartTime;
-        overrideRequest.EndTime = request.EndTime;
-        
         var paginationRequest = new PaginationFilter(
             int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageNumber"].ToString()),
             int.Parse(_httpContextAccessor.HttpContext.Request.Query["PageSize"].ToString()));
-        
+
         var transactions = await
             _transactionRepository
                 .GetAll()
-                .Where(t =>
-                    t.NotebookId == request.NotebookId)
+                .Where(t => t.NotebookId == request.NotebookId)
                 .WhereIf(request.StartTime.HasValue, t => t.TransactionDate >= request.StartTime)
                 .WhereIf(request.EndTime.HasValue, t => t.TransactionDate <= request.EndTime)
                 .WhereIf(!string.IsNullOrEmpty(request.Name), t => t.Name.Contains(request.Name))
@@ -73,15 +67,15 @@ public class GetTransactionsQueryHandler : BaseHandler<GetTransactionsQuery, Bas
                 .WhereIf(request.Amount > 0, t => t.Amount == request.Amount)
                 .WhereIf(request.TransactionType != default, t => t.TransactionType == request.TransactionType)
                 .WhereIf(
-                    request.LabelIds != null && 
-                    request.LabelIds.Any(), t => t.TransactionLabels.Any(tl => !tl.IsDeleted && request.LabelIds.Contains(tl.NotebookLabelId)))
+                    request.LabelIds != null && request.LabelIds.Any(),
+                    t => t.TransactionLabelsV2.Any(tl => !tl.IsDeleted && request.LabelIds.Contains(tl.UserLabelId)))
                 .Include(t => t.Notebook)
                 .Include(t => t.Currency)
-                .Include(t => t.TransactionLabels.Where(tl => !tl.IsDeleted))
-                .ThenInclude(tl => tl.NotebookLabel)
+                .Include(t => t.TransactionLabelsV2.Where(tl => !tl.IsDeleted))
+                .ThenInclude(tl => tl.UserLabel)
                 .OrderByDescending(t => t.TransactionDate)
                 .PaginateAsync(paginationRequest);
-
+        
         var paginateItems = _mapper.Map<List<TransactionDto>>(transactions.Items);
         var paginatedResponse = new PaginatedModel<TransactionDto>(transactions.PageNumber, transactions.PageSize,
             transactions.TotalPages, transactions.TotalRecords, paginateItems);

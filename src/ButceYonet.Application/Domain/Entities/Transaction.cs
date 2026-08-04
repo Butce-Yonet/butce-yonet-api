@@ -21,9 +21,12 @@ public class Transaction : BaseEntity
     public virtual BankAccount BankAccount { get; set; }
     public virtual Currency Currency { get; set; }
     public virtual ICollection<TransactionLabel> TransactionLabels { get; set; }
+    
+    public virtual ICollection<TransactionLabelV2> TransactionLabelsV2 { get; set; }
 
     public Transaction()
     {
         TransactionLabels = new List<TransactionLabel>();
+        TransactionLabelsV2 = new List<TransactionLabelV2>();
     }
 }
