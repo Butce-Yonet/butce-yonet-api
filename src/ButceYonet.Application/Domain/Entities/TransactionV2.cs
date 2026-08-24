@@ -6,7 +6,6 @@ namespace ButceYonet.Application.Domain.Entities;
 public class TransactionV2 : BaseEntity
 {
     public int? NotebookId { get; set; }
-    public int? BankAccountId { get; set; }
     public string ExternalId { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
@@ -18,7 +17,6 @@ public class TransactionV2 : BaseEntity
     public DateTime TransactionDate { get; set; }
 
     public virtual Notebook Notebook { get; set; }
-    public virtual BankAccount BankAccount { get; set; }
     public virtual Currency Currency { get; set; }
     public virtual ICollection<TransactionLabelV2> TransactionLabelsV2 { get; set; }
 

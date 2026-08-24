@@ -16,22 +16,13 @@ public class TransactionLabelV2EntityTypeConfiguration : EFCoreEntityTypeConfigu
             .IsRequired();
 
         builder
-            .Property(p => p.TransactionId)
+            .Property(p => p.TransactionV2Id)
             .IsRequired();
-
-        builder
-            .Property(p => p.TransactionV2Id);
 
         builder
             .HasOne<UserLabel>(p => p.UserLabel)
             .WithMany(p => p.TransactionLabelsV2)
             .HasForeignKey(p => p.UserLabelId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder
-            .HasOne<Transaction>(p => p.Transaction)
-            .WithMany(p => p.TransactionLabelsV2)
-            .HasForeignKey(p => p.TransactionId)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder

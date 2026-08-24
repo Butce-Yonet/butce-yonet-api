@@ -27,29 +27,11 @@ public class NotebookEntityTypeConfiguration : EFCoreEntityTypeConfiguration<Not
             .OnDelete(DeleteBehavior.NoAction);
 
         builder
-            .HasMany<NotebookLabel>(p => p.NotebookLabels)
+            .HasMany<TransactionV2>(p => p.Transactions)
             .WithOne(p => p.Notebook)
             .HasForeignKey(p => p.NotebookId)
             .OnDelete(DeleteBehavior.NoAction);
 
-        builder
-            .HasMany<Transaction>(p => p.Transactions)
-            .WithOne(p => p.Notebook)
-            .HasForeignKey(p => p.NotebookId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder
-            .HasMany<BankAccount>(p => p.BankAccounts)
-            .WithOne(p => p.Notebook)
-            .HasForeignKey(p => p.NotebookId)
-            .OnDelete(DeleteBehavior.NoAction);
-        
-        builder
-            .HasMany<CategorizedTransactionReport>(p => p.CategorizedTransactionReports)
-            .WithOne(p => p.Notebook)
-            .HasForeignKey(p => p.NotebookId)
-            .OnDelete(DeleteBehavior.NoAction);
-        
         builder
             .HasMany<NonCategorizedTransactionReport>(p => p.NonCategorizedTransactionReports)
             .WithOne(p => p.Notebook)

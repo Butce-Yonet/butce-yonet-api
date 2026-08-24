@@ -91,7 +91,7 @@ public class TransactionDeletedDomainEventConsumer : BaseConsumer<TransactionDel
         var transactionLabels = await
             _transactionLabelV2Repository
                 .GetAll()
-                .Where(tl => tl.TransactionId == domainEvent.Transaction.Id)
+                .Where(tl => tl.TransactionV2Id == domainEvent.Transaction.Id)
                 .ToListAsync();
 
         foreach (var transactionLabel in transactionLabels.Where(tl => !tl.IsDeleted))

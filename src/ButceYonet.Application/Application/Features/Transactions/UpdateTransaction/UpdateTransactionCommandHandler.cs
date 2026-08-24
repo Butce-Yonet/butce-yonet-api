@@ -63,7 +63,7 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
                 .FirstOrDefaultAsync();
 
         if (transaction is null)
-            throw new NotFoundException(typeof(Transaction));
+            throw new NotFoundException(typeof(TransactionV2));
 
         transaction.Name = request.Name;
         transaction.Description = request.Description;
@@ -98,7 +98,7 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
         {
             await _transactionLabelV2Repository.AddAsync(new TransactionLabelV2
             {
-                TransactionId = request.TransactionId,
+                TransactionV2Id = request.TransactionId,
                 UserLabelId = labelId
             });
         }

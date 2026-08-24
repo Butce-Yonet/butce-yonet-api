@@ -10,21 +10,14 @@ public class ButceYonetDbContext : EFCoreDbContext
 {
     public DbSet<Notebook> Notebooks { get; set; }
     public DbSet<NotebookUser> NotebookUsers { get; set; }
-    public DbSet<Bank> Banks { get; set; }
-    public DbSet<BankAccount> BankAccounts { get; set; }
-    public DbSet<NotebookLabel> NotebookLabels { get; set; }
     public DbSet<Currency> Currencies { get; set; }
-    public DbSet<Transaction> Transactions { get; set; }
-    public DbSet<TransactionLabel> TransactionLabels { get; set; }
     public DbSet<Plan> Plans { get; set; }
     public DbSet<PlanFeature> PlanFeatures { get; set; }
     public DbSet<UserPlan> UserPlans { get; set; }
     public DbSet<DefaultLabel> DefaultLabels { get; set; }
-    public DbSet<CategorizedTransactionReport> CategorizedTransactionReports { get; set; }
     public DbSet<NonCategorizedTransactionReport> NonCategorizedTransactionReports { get; set; }
     public DbSet<RecurringTransaction> RecurringTransactions { get; set; }
     public DbSet<UserLabel> UserLabels { get; set; }
-    public DbSet<NotebookLabelToUserLabel> NotebookLabelToUserLabels { get; set; }
     public DbSet<TransactionLabelV2> TransactionLabelsV2 { get; set; }
     public DbSet<TransactionV2> TransactionsV2 { get; set; }
     public DbSet<CategorizedTransactionReportV2> CategorizedTransactionReportsV2 { get; set; }

@@ -25,12 +25,6 @@ public class UserLabelEntityTypeConfiguration : EFCoreEntityTypeConfiguration<Us
             .IsRequired();
 
         builder
-            .HasMany<NotebookLabelToUserLabel>(p => p.NotebookLabelToUserLabels)
-            .WithOne(p => p.UserLabel)
-            .HasForeignKey(p => p.UserLabelId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder
             .HasMany<TransactionLabelV2>(p => p.TransactionLabelsV2)
             .WithOne(p => p.UserLabel)
             .HasForeignKey(p => p.UserLabelId)

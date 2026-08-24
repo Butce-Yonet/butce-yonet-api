@@ -15,9 +15,6 @@ public class TransactionV2EntityTypeConfiguration : EFCoreEntityTypeConfiguratio
             .Property(p => p.NotebookId);
 
         builder
-            .Property(p => p.BankAccountId);
-
-        builder
             .Property(p => p.ExternalId)
             .IsRequired()
             .HasMaxLength(128);
@@ -58,27 +55,14 @@ public class TransactionV2EntityTypeConfiguration : EFCoreEntityTypeConfiguratio
 
         builder
             .HasOne<Notebook>(p => p.Notebook)
-            .WithMany()
+            .WithMany(p => p.Transactions)
             .HasForeignKey(p => p.NotebookId)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder
-            .HasOne<BankAccount>(p => p.BankAccount)
-            .WithMany()
-            .HasForeignKey(p => p.BankAccountId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder
             .HasOne<Currency>(p => p.Currency)
-            .WithMany()
+            .WithMany(p => p.Transactions)
             .HasForeignKey(p => p.CurrencyId)
-            .OnDelete(DeleteBehavior.NoAction);
-        
-        builder
-            .HasMany<TransactionLabelV2>(p => p.TransactionLabelsV2)
-            .WithOne(p => p.TransactionV2)
-            .HasForeignKey(p => p.TransactionV2Id)
-            .IsRequired(false)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder
