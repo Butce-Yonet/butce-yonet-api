@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ButceYonet.Api.Controllers;
 
-[Route("api/notebooks/{notebookId}/recurringtransactions")]
+[Route("api/recurringtransactions")]
 public class RecurringTransactions : BaseController
 {
     public RecurringTransactions(IMediator mediator) : base(mediator)
@@ -20,7 +20,6 @@ public class RecurringTransactions : BaseController
     /// <summary>
     /// Zamanlanmış gelir-gider kayıtlarını getirmek için kullanılır
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpGet]
@@ -29,9 +28,8 @@ public class RecurringTransactions : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> List(int notebookId, [FromQuery]GetRecurringTransactionsQuery request)
+    public async Task<IActionResult> List([FromQuery]GetRecurringTransactionsQuery request)
     {
-        request.NotebookId = notebookId;
         var response = await _mediator.Send(request);
         return Response(response);
     }
@@ -39,7 +37,6 @@ public class RecurringTransactions : BaseController
     /// <summary>
     /// Zamanlamış gelir-gider kayıdını getirmek için kullanılır
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="recurringTransactionId"></param>
     /// <returns></returns>
     [HttpGet("{recurringTransactionId}")]
@@ -48,9 +45,9 @@ public class RecurringTransactions : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(int notebookId, int recurringTransactionId)
+    public async Task<IActionResult> Get(int recurringTransactionId)
     {
-        var request = new GetRecurringTransactionQuery(notebookId, recurringTransactionId);
+        var request = new GetRecurringTransactionQuery(recurringTransactionId);
         var response = await _mediator.Send(request);
         return Response(response);
     }
@@ -58,7 +55,6 @@ public class RecurringTransactions : BaseController
     /// <summary>
     /// Zamanlanmış gelir-gider oluşturmak için kullanılır
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpPost]
@@ -67,10 +63,8 @@ public class RecurringTransactions : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Create(int notebookId,
-        [FromBody] CreateRecurringTransactionCommand request)
+    public async Task<IActionResult> Create([FromBody] CreateRecurringTransactionCommand request)
     {
-        request.NotebookId = notebookId;
         var response = await _mediator.Send(request);
         return Response(response);
     }
@@ -78,7 +72,6 @@ public class RecurringTransactions : BaseController
     /// <summary>
     /// Zamanlanmış gelir-gider güncellemek için kullanılır
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="recurringTransactionId"></param>
     /// <param name="request"></param>
     /// <returns></returns>
@@ -88,11 +81,10 @@ public class RecurringTransactions : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(int notebookId, int recurringTransactionId,
+    public async Task<IActionResult> Update(int recurringTransactionId,
         [FromBody] UpdateRecurringTransactionCommand request)
     {
         request.Id = recurringTransactionId;
-        request.NotebookId = notebookId;
         var response = await _mediator.Send(request);
         return Response(response);
     }
@@ -100,7 +92,6 @@ public class RecurringTransactions : BaseController
     /// <summary>
     /// Zamanlanmış gelir-gider bilgisini silmek için kullanılır
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="recurringTransactionId"></param>
     /// <returns></returns>
     [HttpDelete("{recurringTransactionId}")]
@@ -109,9 +100,9 @@ public class RecurringTransactions : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(int notebookId, int recurringTransactionId)
+    public async Task<IActionResult> Delete(int recurringTransactionId)
     {
-        var deleteRecurringTransactionCommand = new DeleteRecurringTransactionCommand(notebookId, recurringTransactionId);
+        var deleteRecurringTransactionCommand = new DeleteRecurringTransactionCommand(recurringTransactionId);
         var response = await _mediator.Send(deleteRecurringTransactionCommand);
         return Response(response);
     }

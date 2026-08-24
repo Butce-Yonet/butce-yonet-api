@@ -5,16 +5,14 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.GetR
 
 public class GetRecurringTransactionQuery : PaginationFilter, IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
     public int RecurringTransactionId { get; set; }
 
     public GetRecurringTransactionQuery()
     {
     }
 
-    public GetRecurringTransactionQuery(int notebookId, int recurringTransactionId)
+    public GetRecurringTransactionQuery(int recurringTransactionId)
     {
-        NotebookId = notebookId;
         RecurringTransactionId = recurringTransactionId;
     }
 }

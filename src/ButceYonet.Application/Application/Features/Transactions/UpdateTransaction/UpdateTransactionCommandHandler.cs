@@ -16,10 +16,10 @@ namespace ButceYonet.Application.Application.Features.Transactions.UpdateTransac
 
 public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionCommand, BaseResponse>
 {
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
     private readonly IRepository<TransactionLabelV2, ButceYonetDbContext> _transactionLabelV2Repository;
     private readonly IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
+    private readonly INotebookPeriodResolver _notebookPeriodResolver;
 
     public UpdateTransactionCommandHandler(
         ICache cache,
@@ -28,42 +28,41 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<TransactionV2, ButceYonetDbContext> transactionRepository,
         IRepository<TransactionLabelV2, ButceYonetDbContext> transactionLabelV2Repository,
-        IRepository<UserLabel, ButceYonetDbContext> userLabelRepository)
+        IRepository<UserLabel, ButceYonetDbContext> userLabelRepository,
+        INotebookPeriodResolver notebookPeriodResolver)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookUserRepository = notebookUserRepository;
         _transactionRepository = transactionRepository;
         _transactionLabelV2Repository = transactionLabelV2Repository;
         _userLabelRepository = userLabelRepository;
+        _notebookPeriodResolver = notebookPeriodResolver;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(UpdateTransactionCommand request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await
-            _notebookUserRepository
-                .Get()
-                .Where(nu =>
-                    nu.NotebookId == request.NotebookId &&
-                    nu.UserId == _user.Id)
-                .AnyAsync();
-
-        if (!isNotebookUser)
-            throw new BusinessRuleException("User is not in notebook"); //TODO:
-
         var transaction = await
             _transactionRepository
                 .Get()
                 .Where(t =>
-                    t.NotebookId == request.NotebookId &&
-                    t.Id == request.TransactionId)
+                    t.Id == request.TransactionId &&
+                    t.NotebookV2.UserId == _user.Id)
+                .Include(t => t.NotebookV2)
                 .Include(t => t.TransactionLabelsV2)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
         if (transaction is null)
             throw new NotFoundException(typeof(TransactionV2));
+
+        var currentTermStart = new DateTime(transaction.NotebookV2.TermStart.Year, transaction.NotebookV2.TermStart.Month, 1);
+        var newTermStart = new DateTime(request.TransactionDate.Year, request.TransactionDate.Month, 1);
+
+        if (newTermStart != currentTermStart)
+        {
+            var newNotebook = await _notebookPeriodResolver.ResolveOrCreateAsync(_user.Id, request.TransactionDate, cancellationToken);
+            transaction.NotebookV2Id = newNotebook.Id;
+        }
 
         transaction.Name = request.Name;
         transaction.Description = request.Description;
@@ -78,16 +77,10 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
             _transactionLabelV2Repository.Update(label);
         }
 
-        var defaultUserId = await _notebookUserRepository
-            .Get()
-            .Where(nu => nu.NotebookId == request.NotebookId && nu.IsDefault)
-            .Select(nu => nu.UserId)
-            .FirstOrDefaultAsync();
-
         var userLabels = await _userLabelRepository
             .GetAll()
-            .Where(ul => ul.UserId == null || ul.UserId == defaultUserId)
-            .ToListAsync();
+            .Where(ul => ul.UserId == null || ul.UserId == _user.Id)
+            .ToListAsync(cancellationToken);
 
         var matchingLabelIds = userLabels
             .Where(ul => request.Labels.Contains(ul.Id))
@@ -108,11 +101,9 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
         var oldTransaction = await
             _transactionRepository
                 .Get()
-                .Where(t =>
-                    t.NotebookId == request.NotebookId &&
-                    t.Id == request.TransactionId)
+                .Where(t => t.Id == request.TransactionId)
                 .Include(t => t.TransactionLabelsV2)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
         var transactionUpdatedDomainEvent = new TransactionUpdatedDomainEvent();
         transactionUpdatedDomainEvent.OldTransaction = oldTransaction;

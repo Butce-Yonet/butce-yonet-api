@@ -6,9 +6,6 @@ public class CreateTransactionCommandValidator : AbstractValidator<CreateTransac
 {
     public CreateTransactionCommandValidator()
     {
-        RuleFor(p => p.NotebookId)
-            .GreaterThan(0);
-        
         RuleFor(p => p.Transactions)
             .NotNull()
             .NotEmpty();

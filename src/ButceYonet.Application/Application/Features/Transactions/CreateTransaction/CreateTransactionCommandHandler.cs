@@ -4,7 +4,6 @@ using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Domain.Events;
-using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
 using DotBoil.Caching;
 using DotBoil.EFCore;
@@ -18,8 +17,8 @@ namespace ButceYonet.Application.Application.Features.Transactions.CreateTransac
 public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionCommand, BaseResponse>
 {
     private readonly IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
+    private readonly INotebookPeriodResolver _notebookPeriodResolver;
 
     public CreateTransactionCommandHandler(
         ICache cache,
@@ -29,48 +28,38 @@ public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionComm
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
         IRepository<UserLabel, ButceYonetDbContext> userLabelRepository,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository)
+        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository,
+        INotebookPeriodResolver notebookPeriodResolver)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _userLabelRepository = userLabelRepository;
-        _notebookUserRepository = notebookUserRepository;
         _transactionRepository = transactionRepository;
+        _notebookPeriodResolver = notebookPeriodResolver;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(CreateTransactionCommand request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await
-            _notebookUserRepository
-                .Get()
-                .Where(nu =>
-                    nu.NotebookId == request.NotebookId &&
-                    nu.UserId == _user.Id)
-                .AnyAsync();
-
-        if (!isNotebookUser)
-            throw new BusinessRuleException("User is not in notebook"); //TODO:
-
-        var notebookTransactionCountValidateParameters = new Dictionary<string, string>
-        {
-            { "NotebookId", request.NotebookId.ToString() }
-        };
-
-        await _userPlanValidator.Validate(PlanFeatures.NotebookTransactionCount, notebookTransactionCountValidateParameters);
-
-        var defaultUserId = await _notebookUserRepository
-            .Get()
-            .Where(nu => nu.NotebookId == request.NotebookId && nu.IsDefault)
-            .Select(nu => nu.UserId)
-            .FirstOrDefaultAsync();
-
         var userLabels = await _userLabelRepository
             .GetAll()
-            .Where(ul => ul.UserId == null || ul.UserId == defaultUserId)
-            .ToListAsync();
-        
+            .Where(ul => ul.UserId == null || ul.UserId == _user.Id)
+            .ToListAsync(cancellationToken);
+
+        var validatedNotebookIds = new HashSet<int>();
+
         foreach (var requestItem in request.Transactions)
         {
+            var notebook = await _notebookPeriodResolver.ResolveOrCreateAsync(_user.Id, requestItem.TransactionDate, cancellationToken);
+
+            if (validatedNotebookIds.Add(notebook.Id))
+            {
+                var notebookTransactionCountValidateParameters = new Dictionary<string, string>
+                {
+                    { "NotebookId", notebook.Id.ToString() }
+                };
+
+                await _userPlanValidator.Validate(PlanFeatures.NotebookTransactionCount, notebookTransactionCountValidateParameters);
+            }
+
             var matchingLabelIds = userLabels
                 .Where(ul => requestItem.Labels.Contains(ul.Id))
                 .Select(ul => ul.Id)
@@ -78,7 +67,7 @@ public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionComm
 
             var transaction = new TransactionV2
             {
-                NotebookId = request.NotebookId,
+                NotebookV2Id = notebook.Id,
                 ExternalId = Guid.NewGuid().ToString(),
                 Name = requestItem.Name,
                 Description = requestItem.Description,

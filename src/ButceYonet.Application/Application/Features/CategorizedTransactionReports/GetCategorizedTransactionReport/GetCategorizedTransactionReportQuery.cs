@@ -7,7 +7,6 @@ namespace ButceYonet.Application.Application.Features.CategorizedTransactionRepo
 
 public class GetCategorizedTransactionReportQuery : IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
     public int? NotebookLabelId { get; set; }
     public int? CurrencyId { get; set; }
     public TransactionTypes TransactionTypes { get; set; }
@@ -17,6 +16,6 @@ public class GetCategorizedTransactionReportQuery : IRequest<BaseResponse>
     public override string ToString()
     {
         return
-            $"DotBoil:ButceYonet:Report:CategorizedTransaction:{NotebookId}-{NotebookLabelId}-{CurrencyId}-{TransactionTypes}-{StartDate}-{EndDate}";
+            $"DotBoil:ButceYonet:Report:CategorizedTransaction:{NotebookLabelId}-{CurrencyId}-{TransactionTypes}-{StartDate}-{EndDate}";
     }
 }

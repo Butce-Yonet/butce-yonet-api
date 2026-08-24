@@ -8,8 +8,6 @@ namespace ButceYonet.Application.Infrastructure.Data;
 
 public class ButceYonetDbContext : EFCoreDbContext
 {
-    public DbSet<Notebook> Notebooks { get; set; }
-    public DbSet<NotebookUser> NotebookUsers { get; set; }
     public DbSet<Currency> Currencies { get; set; }
     public DbSet<Plan> Plans { get; set; }
     public DbSet<PlanFeature> PlanFeatures { get; set; }
@@ -21,7 +19,8 @@ public class ButceYonetDbContext : EFCoreDbContext
     public DbSet<TransactionLabelV2> TransactionLabelsV2 { get; set; }
     public DbSet<TransactionV2> TransactionsV2 { get; set; }
     public DbSet<CategorizedTransactionReportV2> CategorizedTransactionReportsV2 { get; set; }
-    
+    public DbSet<NotebookV2> NotebookV2s { get; set; }
+
     public ButceYonetDbContext(IServiceProvider serviceProvider) : base(serviceProvider)
     {
     }

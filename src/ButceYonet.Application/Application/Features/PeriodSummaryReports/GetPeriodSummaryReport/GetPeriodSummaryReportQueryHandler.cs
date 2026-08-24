@@ -4,7 +4,6 @@ using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Application.Shared.Dtos;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Enums;
-using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
 using DotBoil.Caching;
 using DotBoil.EFCore;
@@ -18,7 +17,6 @@ namespace ButceYonet.Application.Application.Features.PeriodSummaryReports.GetPe
 
 public class GetPeriodSummaryReportQueryHandler : BaseHandler<GetPeriodSummaryReportQuery, BaseResponse>
 {
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
     private readonly IRepository<Currency, ButceYonetDbContext> _currencyRepository;
     private readonly IMapper _mapper;
@@ -30,12 +28,10 @@ public class GetPeriodSummaryReportQueryHandler : BaseHandler<GetPeriodSummaryRe
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> nonCategorizedTransactionReportRepository,
         IRepository<Currency, ButceYonetDbContext> currencyRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookUserRepository = notebookUserRepository;
         _nonCategorizedTransactionReportRepository = nonCategorizedTransactionReportRepository;
         _currencyRepository = currencyRepository;
         _mapper = mapper;
@@ -43,20 +39,19 @@ public class GetPeriodSummaryReportQueryHandler : BaseHandler<GetPeriodSummaryRe
 
     public override async Task<BaseResponse> ExecuteRequest(GetPeriodSummaryReportQuery request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await _notebookUserRepository
-            .Get()
-            .Where(nu => nu.NotebookId == request.NotebookId && nu.UserId == _user.Id)
-            .AnyAsync(cancellationToken);
+        var dto = await this._cache.GetOrSetAsync($"{request}:{_user.Id}", () => BuildReportAsync(request, cancellationToken), TimeSpan.FromMinutes(15));
 
-        if (!isNotebookUser)
-            throw new BusinessRuleException("User is not in notebook");
+        return BaseResponse.Response(dto, HttpStatusCode.OK);
+    }
 
+    private async Task<PeriodSummaryReportDto> BuildReportAsync(GetPeriodSummaryReportQuery request, CancellationToken cancellationToken)
+    {
         var startDate = request.StartDate.Date;
         var endDate = request.EndDate.Date;
 
         var baseQuery = _nonCategorizedTransactionReportRepository
             .GetAll()
-            .Where(nctr => nctr.NotebookId == request.NotebookId)
+            .Where(nctr => nctr.NotebookV2.UserId == _user.Id)
             .WhereIf(request.CurrencyId.HasValue, nctr => nctr.CurrencyId == request.CurrencyId.Value);
 
         var totalIncome = await baseQuery
@@ -107,9 +102,8 @@ public class GetPeriodSummaryReportQueryHandler : BaseHandler<GetPeriodSummaryRe
                 currencyDto = _mapper.Map<CurrencyDto>(currency);
         }
 
-        var dto = new PeriodSummaryReportDto
+        return new PeriodSummaryReportDto
         {
-            NotebookId = request.NotebookId,
             StartDate = startDate,
             EndDate = endDate,
             TotalIncome = totalIncome,
@@ -125,8 +119,6 @@ public class GetPeriodSummaryReportQueryHandler : BaseHandler<GetPeriodSummaryRe
             NetBalanceChangePercent = netBalanceChangePercent,
             Currency = currencyDto
         };
-
-        return BaseResponse.Response(dto, HttpStatusCode.OK);
     }
 
     private static decimal? CalculateChangePercent(decimal current, decimal previous)

@@ -1,21 +1,19 @@
-using System.Collections;
 using DotBoil.Entities;
 
 namespace ButceYonet.Application.Domain.Entities;
 
-public class Notebook : BaseEntity
+public class NotebookV2 : BaseEntity
 {
+    public int UserId { get; set; }
     public string Name { get; set; }
-    public bool IsDefault { get; set; }
-    
-    public virtual ICollection<NotebookUser> NotebookUsers { get; set; } 
-    public virtual ICollection<TransactionV2> Transactions { get; set; }
+    public DateTime TermStart { get; set; }
+    public DateTime TermEnd { get; set; }
 
+    public virtual ICollection<TransactionV2> Transactions { get; set; }
     public virtual ICollection<NonCategorizedTransactionReport> NonCategorizedTransactionReports { get; set; }
 
-    public Notebook()
+    public NotebookV2()
     {
-        NotebookUsers = new List<NotebookUser>();
         Transactions = new List<TransactionV2>();
         NonCategorizedTransactionReports = new List<NonCategorizedTransactionReport>();
     }

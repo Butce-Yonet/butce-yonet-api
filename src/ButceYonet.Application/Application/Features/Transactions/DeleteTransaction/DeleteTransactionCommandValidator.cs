@@ -6,7 +6,6 @@ public class DeleteTransactionCommandValidator : AbstractValidator<DeleteTransac
 {
     public DeleteTransactionCommandValidator()
     {
-        RuleFor(p => p.NotebookId).GreaterThan(0);
         RuleFor(p => p.TransactionId).GreaterThan(0);
     }
 }

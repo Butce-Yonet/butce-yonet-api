@@ -6,9 +6,6 @@ public class GetCategorizedTransactionReportQueryValidator : AbstractValidator<G
 {
     public GetCategorizedTransactionReportQueryValidator()
     {
-        RuleFor(p => p.NotebookId)
-            .GreaterThan(0);
-
         RuleFor(p => p.TransactionTypes)
             .IsInEnum();
     }

@@ -16,11 +16,9 @@ namespace ButceYonet.Application.Application.Features.NonCategorizedTransactionR
 
 public class GetNonCategorizedTransactionReportQueryHandler : BaseHandler<GetNonCategorizedTransactionReportQuery, BaseResponse>
 {
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
-    
     private readonly IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>
         _nonCategorizedTransactionReportRepository;
-    
+
     public GetNonCategorizedTransactionReportQueryHandler(
         ICache cache,
         IUser user,
@@ -28,38 +26,25 @@ public class GetNonCategorizedTransactionReportQueryHandler : BaseHandler<GetNon
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
-        IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> nonCategorizedTransactionReportRepository) 
+        IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> nonCategorizedTransactionReportRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookUserRepository = notebookUserRepository;
         _nonCategorizedTransactionReportRepository = nonCategorizedTransactionReportRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(GetNonCategorizedTransactionReportQuery request, CancellationToken cancellationToken)
     {
-        var report = await this._cache.GetOrSetAsync<List<NonCategorizedTransactionReportDto>>(request.ToString(), async () =>
+        var report = await this._cache.GetOrSetAsync<List<NonCategorizedTransactionReportDto>>($"{request}:{_user.Id}", async () =>
         {
-            var isNotebookUser = await
-                _notebookUserRepository
-                    .Get()
-                    .Where(nu =>
-                        nu.NotebookId == request.NotebookId &&
-                        nu.UserId == _user.Id)
-                    .AnyAsync();
-
-            if (!isNotebookUser)
-                return new List<NonCategorizedTransactionReportDto>();
-            
             var reportItems = await _nonCategorizedTransactionReportRepository
                 .GetAll()
                 .Where(nctr =>
-                    nctr.NotebookId == request.NotebookId &&
+                    nctr.NotebookV2.UserId == _user.Id &&
                     nctr.TransactionType == request.TransactionTypes)
                 .WhereIf(request.CurrencyId.HasValue, nctr => nctr.CurrencyId == request.CurrencyId)
                 .WhereIf(request.StartDate.HasValue, nctr => nctr.Term >= request.StartDate)
                 .WhereIf(request.EndDate.HasValue, nctr => nctr.Term <= request.EndDate)
-                .Include(nctr => nctr.Notebook)
+                .Include(nctr => nctr.NotebookV2)
                 .Include(nctr => nctr.Currency)
                 .ToListAsync();
 
@@ -87,7 +72,7 @@ public class GetNonCategorizedTransactionReportQueryHandler : BaseHandler<GetNon
                             var s = x.First;
                             return new NonCategorizedTransactionReportDto
                             {
-                                NotebookDto = new NotebookDto { Id = s.Notebook.Id, Name = s.Notebook.Name, IsDefault = s.Notebook.IsDefault },
+                                NotebookDto = new NotebookDto { Id = s.NotebookV2.Id, Name = s.NotebookV2.Name, TermStart = s.NotebookV2.TermStart, TermEnd = s.NotebookV2.TermEnd },
                                 TransactionTypes = s.TransactionType,
                                 Currency = new CurrencyDto { Id = s.Currency.Id, Code = s.Currency.Code, Name = s.Currency.Name, Symbol = s.Currency.Symbol, IsSymbolRight = s.Currency.IsSymbolRight, Rank = s.Currency.Rank },
                                 Amount = cumulative,
@@ -100,7 +85,7 @@ public class GetNonCategorizedTransactionReportQueryHandler : BaseHandler<GetNon
 
             return responseModel;
         }, TimeSpan.FromMinutes(15));
-        
+
         return BaseResponse.Response(report, HttpStatusCode.OK);
     }
 }

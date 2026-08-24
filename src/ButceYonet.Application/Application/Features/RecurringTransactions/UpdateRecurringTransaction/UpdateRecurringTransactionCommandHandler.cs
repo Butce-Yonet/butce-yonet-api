@@ -15,43 +15,29 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.Upda
 
 public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurringTransactionCommand, BaseResponse>
 {
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
     private readonly IRecurringTransactionIntervalsService _recurringTransactionIntervalsService;
-    
+
     public UpdateRecurringTransactionCommandHandler(
-        ICache cache, 
-        IUser user, 
+        ICache cache,
+        IUser user,
         IMapper mapper,
         ILocalize localize,
-        IParameterManager parameter, 
+        IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository,
-        IRecurringTransactionIntervalsService recurringTransactionIntervalsService) 
+        IRecurringTransactionIntervalsService recurringTransactionIntervalsService)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookUserRepository = notebookUserRepository;
         _recurringTransactionRepository = recurringTransactionRepository;
         _recurringTransactionIntervalsService = recurringTransactionIntervalsService;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(UpdateRecurringTransactionCommand request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await
-            _notebookUserRepository
-                .Get()
-                .Where(nu =>
-                    nu.NotebookId == request.NotebookId &&
-                    nu.UserId == _user.Id)
-                .AnyAsync();
-
-        if (!isNotebookUser)
-            throw new BusinessRuleException("User is not in notebook"); //TODO:
-
         var recurringTransaction = await _recurringTransactionRepository
             .Get()
-            .Where(rt => rt.Id == request.Id && rt.NotebookId == request.NotebookId)
+            .Where(rt => rt.Id == request.Id && rt.UserId == _user.Id)
             .FirstOrDefaultAsync();
 
         if (recurringTransaction is null)
@@ -66,7 +52,7 @@ public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurr
 
         if (recurringTransaction.StartDate.Date > DateTime.Now.Date)
             recurringTransaction.StartDate = request.StartDate;
-        
+
         recurringTransaction.EndDate = request.EndDate;
         recurringTransaction.Frequency = request.Frequency;
         recurringTransaction.Interval = request.Interval;
@@ -76,10 +62,10 @@ public class UpdateRecurringTransactionCommandHandler : BaseHandler<UpdateRecurr
             || originalInterval != request.Interval;
         if (scheduleChanged)
             recurringTransaction.NextOccurrence = _recurringTransactionIntervalsService.CalculateInterval(request.StartDate, request.Frequency, request.Interval);
-        
+
         _recurringTransactionRepository.Update(recurringTransaction);
         await _recurringTransactionRepository.SaveChangesAsync();
-        
+
         return BaseResponse.Response(new {}, HttpStatusCode.OK);
     }
 }

@@ -16,7 +16,6 @@ namespace ButceYonet.Application.Application.Features.Transactions.GetTransactio
 
 public class GetTransactionQueryHandler : BaseHandler<GetTransactionQuery, BaseResponse>
 {
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
 
     public GetTransactionQueryHandler(
@@ -26,34 +25,21 @@ public class GetTransactionQueryHandler : BaseHandler<GetTransactionQuery, BaseR
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<TransactionV2, ButceYonetDbContext> transactionRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookUserRepository = notebookUserRepository;
         _transactionRepository = transactionRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(GetTransactionQuery request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await
-            _notebookUserRepository
-                .Get()
-                .Where(nu =>
-                    nu.NotebookId == request.NotebookId &&
-                    nu.UserId == _user.Id)
-                .AnyAsync();
-
-        if (!isNotebookUser)
-            throw new BusinessRuleException("User is not in notebook"); //TODO:
-
         var transaction = await
             _transactionRepository
                 .Get()
                 .Where(t =>
-                    t.NotebookId == request.NotebookId &&
-                    t.Id == request.TransactionId)
-                .Include(t => t.Notebook)
+                    t.Id == request.TransactionId &&
+                    t.NotebookV2.UserId == _user.Id)
+                .Include(t => t.NotebookV2)
                 .Include(t => t.Currency)
                 .Include(t => t.TransactionLabelsV2)
                 .ThenInclude(tl => tl.UserLabel)

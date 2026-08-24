@@ -29,7 +29,7 @@ public class NotebookTransactionCount : IUserPlanRuleValidator
         var transactionCount = await
             _transactionRepository
                 .GetAll()
-                .Where(p => p.NotebookId == notebookId)
+                .Where(p => p.NotebookV2Id == notebookId)
                 .CountAsync();
 
         if (planFeature.Count > transactionCount)

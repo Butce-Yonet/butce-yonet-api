@@ -1,0 +1,99 @@
+@model ButceYonet.Application.Infrastructure.MailTemplates.RecurringTransactionEndedTemplateModel
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f7fb;">
+    <tr>
+        <td>
+            <table width="650" cellpadding="0" cellspacing="0" align="center" style="margin-bottom:30px;">
+                <tr>
+                    <td align="center">
+                        <h2 style="margin:0; color:#22c55e;"> Bütçe Yönet </h2>
+                    </td>
+                </tr>
+            </table>
+            <table width="650" cellpadding="0" cellspacing="0" align="center" style="background-color:#ffffff; border-radius:8px;">
+                <tr>
+                    <td style="padding:30px; color:#333333; font-size:13px; line-height:1.7; letter-spacing:0.5px;">
+                        <p style="margin-top:0;">Merhaba <strong>@Model.UserName</strong>,</p>
+                        <p>
+                            <strong>@Model.EndedDate.ToString("dd.MM.yyyy")</strong> tarihi itibarıyla aşağıdaki tekrarlayan kayıtlarınız sona erdi.
+                        </p>
+
+                        @if (Model.EndedIncomes.Any())
+                        {
+                            <table width="100%" cellpadding="12" cellspacing="0" style="background-color:#fef2f2; border:1px solid #fecaca; border-radius:6px; margin:15px 0;">
+                                <tr>
+                                    <td>
+                                        <p style="margin:0 0 8px 0; font-weight:bold; color:#b91c1c;">Bir gelir kaynağınız sona erdi</p>
+                                        <p style="margin:0 0 10px 0; color:#7f1d1d;">
+                                            Üzülmeyin, bu bir kayıp değil — sadece planladığınız sürenin sonuna geldiniz. Dilerseniz uygulama üzerinden yeni bir tekrarlayan gelir tanımlayarak devam edebilirsiniz.
+                                        </p>
+                                        <table width="100%" cellpadding="6" cellspacing="0">
+                                            @foreach (var item in Model.EndedIncomes)
+                                            {
+                                                <tr>
+                                                    <td style="border-bottom:1px solid #fecaca;">
+                                                        <strong>@item.Name</strong>
+                                                        @if (!string.IsNullOrWhiteSpace(item.Description))
+                                                        {
+                                                            <span style="color:#7f1d1d; font-size:12px;"> — @item.Description</span>
+                                                        }
+                                                    </td>
+                                                    <td style="border-bottom:1px solid #fecaca; text-align:right; font-weight:500; color:#b91c1c;">
+                                                        @(item.IsSymbolRight ? item.Amount.ToString("N2") + " " + item.CurrencySymbol : item.CurrencySymbol + " " + item.Amount.ToString("N2"))
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        }
+
+                        @if (Model.EndedExpenses.Any())
+                        {
+                            <table width="100%" cellpadding="12" cellspacing="0" style="background-color:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; margin:15px 0;">
+                                <tr>
+                                    <td>
+                                        <p style="margin:0 0 8px 0; font-weight:bold; color:#15803d;">Güzel haber! Bir masrafınız sona erdi 🎉</p>
+                                        <p style="margin:0 0 10px 0; color:#166534;">
+                                            Aşağıdaki tekrarlayan gideriniz artık defterinize eklenmeyecek. Bütçenizde biraz daha nefes alanı oluştu, tebrikler!
+                                        </p>
+                                        <table width="100%" cellpadding="6" cellspacing="0">
+                                            @foreach (var item in Model.EndedExpenses)
+                                            {
+                                                <tr>
+                                                    <td style="border-bottom:1px solid #bbf7d0;">
+                                                        <strong>@item.Name</strong>
+                                                        @if (!string.IsNullOrWhiteSpace(item.Description))
+                                                        {
+                                                            <span style="color:#166534; font-size:12px;"> — @item.Description</span>
+                                                        }
+                                                    </td>
+                                                    <td style="border-bottom:1px solid #bbf7d0; text-align:right; font-weight:500; color:#15803d;">
+                                                        @(item.IsSymbolRight ? item.Amount.ToString("N2") + " " + item.CurrencySymbol : item.CurrencySymbol + " " + item.Amount.ToString("N2"))
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        }
+
+                        <p style="margin-bottom:0;">
+                            Detayları uygulama üzerinden görüntüleyebilirsiniz.<br>
+                            <strong>Bütçe Yönet Ekibi</strong>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <table width="650" cellpadding="0" cellspacing="0" align="center" style="margin-top:30px;">
+                <tr>
+                    <td align="center" style="font-size:12px; color:#999999;">
+                        <p style="margin-bottom:4px;"> © @Model.Year Bütçe Yönet </p>
+                        <p style="margin-bottom:0;"> Bu e-posta otomatik olarak gönderilmiştir. </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>

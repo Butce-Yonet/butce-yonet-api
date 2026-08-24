@@ -10,18 +10,17 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ButceYonet.Api.Controllers;
 
-[Route("api/notebooks/{notebookId}/transactions")]
+[Route("api/transactions")]
 public class TransactionsController : BaseController
 {
-    public TransactionsController(IMediator mediator) 
+    public TransactionsController(IMediator mediator)
         : base(mediator)
     {
     }
 
     /// <summary>
-    /// İstenilen deftere ait gelir-gider kalemlerini getirir
+    /// Mevcut kullanıcıya ait gelir-gider kalemlerini getirir
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpGet]
@@ -30,17 +29,15 @@ public class TransactionsController : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> List(int notebookId, [FromQuery] GetTransactionsQuery request)
+    public async Task<IActionResult> List([FromQuery] GetTransactionsQuery request)
     {
-        request.NotebookId = notebookId;
         var response = await _mediator.Send(request);
         return Response(response);
     }
 
     /// <summary>
-    /// İstenilen deftere ait spesifik bir gelir-gider kalemini getirir
+    /// Spesifik bir gelir-gider kalemini getirir
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="transactionId"></param>
     /// <returns></returns>
     [HttpGet("{transactionId}")]
@@ -49,17 +46,16 @@ public class TransactionsController : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(int notebookId, int transactionId)
+    public async Task<IActionResult> Get(int transactionId)
     {
-        var request = new GetTransactionQuery(notebookId, transactionId);
+        var request = new GetTransactionQuery(transactionId);
         var response = await _mediator.Send(request);
         return Response(response);
     }
 
     /// <summary>
-    /// İstenilen deftere gelir-gider kalemi eklemek için kullanılır
+    /// Gelir-gider kalemi eklemek için kullanılır. İşlem tarihine göre ilgili aya ait defter otomatik bulunur/oluşturulur.
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpPost]
@@ -68,17 +64,15 @@ public class TransactionsController : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Create(int notebookId, [FromBody] CreateTransactionCommand request)
+    public async Task<IActionResult> Create([FromBody] CreateTransactionCommand request)
     {
-        request.NotebookId = notebookId;
         var response = await _mediator.Send(request);
         return Response(response);
     }
 
     /// <summary>
-    /// İstenilen deftere ait spesifik bir gelir-gider kalemini güncellemek için kullanılır
+    /// Spesifik bir gelir-gider kalemini güncellemek için kullanılır
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpPut]
@@ -87,23 +81,21 @@ public class TransactionsController : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(int notebookId, [FromBody] UpdateTransactionCommand request)
+    public async Task<IActionResult> Update([FromBody] UpdateTransactionCommand request)
     {
-        request.NotebookId = notebookId;
         var response = await _mediator.Send(request);
         return Response(response);
     }
 
     /// <summary>
-    /// İstenilen deftere ait spesifik bir gelir-gider kalemini silmek için kullanılır
+    /// Spesifik bir gelir-gider kalemini silmek için kullanılır
     /// </summary>
-    /// <param name="notebookId"></param>
     /// <param name="transactionId"></param>
     /// <returns></returns>
     [HttpDelete("{transactionId}")]
-    public async Task<IActionResult> Delete(int notebookId, int transactionId)
+    public async Task<IActionResult> Delete(int transactionId)
     {
-        var request = new DeleteTransactionCommand(notebookId, transactionId);
+        var request = new DeleteTransactionCommand(transactionId);
         var response = await _mediator.Send(request);
         return Response(response);
     }

@@ -16,7 +16,6 @@ namespace ButceYonet.Application.Application.Features.Transactions.DeleteTransac
 
 public class DeleteTransactionCommandHandler : BaseHandler<DeleteTransactionCommand, BaseResponse>
 {
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
 
     public DeleteTransactionCommandHandler(
@@ -26,33 +25,21 @@ public class DeleteTransactionCommandHandler : BaseHandler<DeleteTransactionComm
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<TransactionV2, ButceYonetDbContext> transactionRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookUserRepository = notebookUserRepository;
         _transactionRepository = transactionRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(DeleteTransactionCommand request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await
-            _notebookUserRepository
-                .Get()
-                .Where(nu =>
-                    nu.NotebookId == request.NotebookId &&
-                    nu.UserId == _user.Id)
-                .AnyAsync();
-
-        if (!isNotebookUser)
-            throw new BusinessRuleException(""); //TODO:
-
         var transaction = await
             _transactionRepository
                 .Get()
                 .Where(t =>
-                    t.NotebookId == request.NotebookId &&
-                    t.Id == request.TransactionId)
+                    t.Id == request.TransactionId &&
+                    t.NotebookV2.UserId == _user.Id)
+                .Include(t => t.TransactionLabelsV2)
                 .FirstOrDefaultAsync();
 
         if (transaction is null)

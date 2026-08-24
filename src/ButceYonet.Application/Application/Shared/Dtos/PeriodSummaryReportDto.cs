@@ -5,7 +5,6 @@ namespace ButceYonet.Application.Application.Shared.Dtos;
 /// </summary>
 public class PeriodSummaryReportDto
 {
-    public int NotebookId { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
 

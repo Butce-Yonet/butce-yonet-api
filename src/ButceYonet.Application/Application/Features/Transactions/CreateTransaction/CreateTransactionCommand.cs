@@ -6,7 +6,6 @@ namespace ButceYonet.Application.Application.Features.Transactions.CreateTransac
 
 public class CreateTransactionCommand : IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
     public List<CreateTransactionItem> Transactions { get; set; }
     
     public class CreateTransactionItem

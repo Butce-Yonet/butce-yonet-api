@@ -15,13 +15,13 @@ namespace ButceYonet.Application.Application.Features.Landing.GetLandingStats;
 public class GetLandingStatsQueryHandler : IRequestHandler<GetLandingStatsQuery, BaseResponse>
 {
     private readonly ICache _cache;
-    private readonly IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
+    private readonly IRepository<NotebookV2, ButceYonetDbContext> _notebookRepository;
     private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
     private readonly IRepository<User, ButceYonetAuthorizationDbContext> _userRepository;
 
     public GetLandingStatsQueryHandler(
         ICache cache,
-        IRepository<Notebook, ButceYonetDbContext> notebookRepository,
+        IRepository<NotebookV2, ButceYonetDbContext> notebookRepository,
         IRepository<TransactionV2, ButceYonetDbContext> transactionRepository,
         IRepository<User, ButceYonetAuthorizationDbContext> userRepository)
     {

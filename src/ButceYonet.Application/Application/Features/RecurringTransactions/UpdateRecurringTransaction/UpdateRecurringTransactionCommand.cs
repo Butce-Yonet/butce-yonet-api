@@ -7,7 +7,6 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.Upda
 public class UpdateRecurringTransactionCommand : IRequest<BaseResponse>
 {
     public int Id { get; set; }
-    public int NotebookId { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
     public DateTime StartDate { get; set; }

@@ -8,9 +8,10 @@ public class NotebookProfile : Profile
 {
     public NotebookProfile()
     {
-        CreateMap<Notebook, NotebookDto>()
+        CreateMap<NotebookV2, NotebookDto>()
             .ForMember(m => m.Id, m => m.MapFrom(m => m.Id))
             .ForMember(m => m.Name, m => m.MapFrom(m => m.Name))
-            .ForMember(m => m.IsDefault, m => m.MapFrom(m => m.IsDefault));
+            .ForMember(m => m.TermStart, m => m.MapFrom(m => m.TermStart))
+            .ForMember(m => m.TermEnd, m => m.MapFrom(m => m.TermEnd));
     }
 }

@@ -1,3 +1,4 @@
+using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Infrastructure.Data;
@@ -13,13 +14,14 @@ namespace ButceYonet.Consumers;
 public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCreatedDomainEvent>
 {
     private readonly IServiceProvider _serviceProvider;
-    private IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
-    private IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
-    private IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> _categorizedTransactionReportRepository;
+    private readonly ITransactionReportSyncService _reportSyncService;
 
-    public TransactionCreatedDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
+    public TransactionCreatedDomainEventConsumer(
+        IServiceProvider serviceProvider,
+        ITransactionReportSyncService reportSyncService) : base(serviceProvider)
     {
         _serviceProvider = serviceProvider;
+        _reportSyncService = reportSyncService;
     }
 
     public override async Task ConsumeEvent(ConsumeContext<TransactionCreatedDomainEvent> context)
@@ -28,10 +30,11 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
             return;
 
         using var scope = _serviceProvider.CreateScope();
-        InitializeDependencies(scope);
+        var transactionRepository = scope.ServiceProvider
+            .GetRequiredService<IRepository<TransactionV2, ButceYonetDbContext>>();
 
         var transaction = await
-            _transactionRepository
+            transactionRepository
                 .Get()
                 .Where(t => t.Id == context.Message.Transaction.Id)
                 .Include(t => t.TransactionLabelsV2)
@@ -40,98 +43,12 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
         if (transaction is null)
             return;
 
-        await ProcessNonCategorizedTransactionReport(context.Message);
-        await ProcessCategorizedTransactionReport(context.Message);
+        await Task.WhenAll(
+            _reportSyncService.SyncNonCategorizedAsync(context.Message.Transaction, context.Message.Transaction.Amount),
+            _reportSyncService.SyncCategorizedAsync(context.Message.Transaction, context.Message.Transaction.Amount));
 
         transaction.IsProceed = true;
-        _transactionRepository.Update(transaction);
-
-        await _nonCategorizedTransactionReportRepository.SaveChangesAsync();
-    }
-
-    private void InitializeDependencies(IServiceScope scope)
-    {
-        _transactionRepository =
-            scope.ServiceProvider.GetRequiredService<IRepository<TransactionV2, ButceYonetDbContext>>();
-        _nonCategorizedTransactionReportRepository = scope.ServiceProvider
-            .GetRequiredService<IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>>();
-        _categorizedTransactionReportRepository = scope.ServiceProvider
-            .GetRequiredService<IRepository<CategorizedTransactionReportV2, ButceYonetDbContext>>();
-    }
-
-    private async Task ProcessNonCategorizedTransactionReport(TransactionCreatedDomainEvent domainEvent)
-    {
-        var transactionDate = domainEvent.Transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
-
-        var nonCategorizedTransactionReport = await
-            _nonCategorizedTransactionReportRepository
-                .Get()
-                .Where(p =>
-                    p.NotebookId == domainEvent.Transaction.NotebookId &&
-                    p.TransactionType == domainEvent.Transaction.TransactionType &&
-                    p.CurrencyId == domainEvent.Transaction.CurrencyId &&
-                    p.Term == reportDate)
-                .FirstOrDefaultAsync();
-
-        if (nonCategorizedTransactionReport is null)
-        {
-            nonCategorizedTransactionReport = new NonCategorizedTransactionReport()
-            {
-                NotebookId = domainEvent.Transaction.NotebookId.Value,
-                TransactionType = domainEvent.Transaction.TransactionType,
-                CurrencyId = domainEvent.Transaction.CurrencyId,
-                Term = reportDate
-            };
-        }
-
-        nonCategorizedTransactionReport.Amount += domainEvent.Transaction.Amount;
-
-        if (nonCategorizedTransactionReport.Id == default(int))
-            await _nonCategorizedTransactionReportRepository.AddAsync(nonCategorizedTransactionReport);
-        else
-            _nonCategorizedTransactionReportRepository.Update(nonCategorizedTransactionReport);
-    }
-
-    private async Task ProcessCategorizedTransactionReport(TransactionCreatedDomainEvent domainEvent)
-    {
-        var transactionDate = domainEvent.Transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
-
-        var categorizedTransactionReports = await
-            _categorizedTransactionReportRepository
-                .GetAll()
-                .Where(p =>
-                    p.NotebookId == domainEvent.Transaction.NotebookId &&
-                    p.TransactionType == domainEvent.Transaction.TransactionType &&
-                    p.CurrencyId == domainEvent.Transaction.CurrencyId &&
-                    p.Term == reportDate)
-                .ToListAsync();
-
-        foreach (var transactionLabel in domainEvent.Transaction.TransactionLabelsV2.Where(tl => !tl.IsDeleted))
-        {
-            var categorizedTransactionReport =
-                categorizedTransactionReports.FirstOrDefault(p =>
-                    p.UserLabelId == transactionLabel.UserLabelId);
-
-            if (categorizedTransactionReport is null)
-            {
-                categorizedTransactionReport = new CategorizedTransactionReportV2
-                {
-                    NotebookId = domainEvent.Transaction.NotebookId.Value,
-                    UserLabelId = transactionLabel.UserLabelId,
-                    TransactionType = domainEvent.Transaction.TransactionType,
-                    CurrencyId = domainEvent.Transaction.CurrencyId,
-                    Term = reportDate
-                };
-            }
-
-            categorizedTransactionReport.Amount += domainEvent.Transaction.Amount;
-
-            if (categorizedTransactionReport.Id == default(int))
-                await _categorizedTransactionReportRepository.AddAsync(categorizedTransactionReport);
-            else
-                _categorizedTransactionReportRepository.Update(categorizedTransactionReport);
-        }
+        transactionRepository.Update(transaction);
+        await transactionRepository.SaveChangesAsync();
     }
 }

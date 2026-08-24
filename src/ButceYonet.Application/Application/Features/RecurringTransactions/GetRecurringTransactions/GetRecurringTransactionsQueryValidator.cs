@@ -5,8 +5,4 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.GetR
 
 public class GetRecurringTransactionsQueryValidator : AbstractValidator<GetRecurringTransactionQuery>
 {
-    public GetRecurringTransactionsQueryValidator()
-    {
-        RuleFor(p => p.NotebookId).GreaterThan(0);
-    }
 }

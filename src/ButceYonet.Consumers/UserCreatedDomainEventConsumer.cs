@@ -25,7 +25,6 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
     private IRepository<User, ButceYonetAuthorizationDbContext> _userRepository;
     private IRepository<Plan, ButceYonetDbContext> _planRepository;
     private IRepository<UserPlan, ButceYonetDbContext> _userPlanRepository;
-    private IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
     private IRepository<DefaultLabel, ButceYonetDbContext> _defaultLabelRepository;
     private IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
     private ICache _cache;
@@ -45,7 +44,6 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
         InitializeDependencies(scope);
         await InitializeUserPlan(context.Message);
         await InitializeUserLabels(context.Message);
-        await InitializeNotebook(context.Message);
         await SendWelcomeMail(context.Message);
     }
 
@@ -55,7 +53,6 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
             scope.ServiceProvider.GetRequiredService<IRepository<User, ButceYonetAuthorizationDbContext>>();
         _planRepository = scope.ServiceProvider.GetRequiredService<IRepository<Plan, ButceYonetDbContext>>();
         _userPlanRepository = scope.ServiceProvider.GetRequiredService<IRepository<UserPlan, ButceYonetDbContext>>();
-        _notebookRepository = scope.ServiceProvider.GetRequiredService<IRepository<Notebook, ButceYonetDbContext>>();
         _defaultLabelRepository = scope.ServiceProvider.GetRequiredService<IRepository<DefaultLabel, ButceYonetDbContext>>();
         _userLabelRepository = scope.ServiceProvider.GetRequiredService<IRepository<UserLabel, ButceYonetDbContext>>();
         _cache = scope.ServiceProvider.GetRequiredService<ICache>();
@@ -116,35 +113,6 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
 
         await _userLabelRepository.AddRangeAsync(userLabels);
         await _userLabelRepository.SaveChangesAsync();
-    }
-
-    private async Task InitializeNotebook(UserCreatedDomainEvent @event)
-    {
-        var user = await _userRepository.Get().Where(p => p.Email == @event.Email).FirstOrDefaultAsync();
-
-        if (user is null)
-            return;
-        
-        var notebook = new Notebook()
-        {
-            Name = "İlk defterim",
-            IsDefault = true
-        };
-
-        var notebookUser = new NotebookUser()
-        {
-            UserId = @user.Id,
-            IsDefault = true
-        };
-        
-        notebook.NotebookUsers.Add(notebookUser);
-
-        var notebookCreatedDomainEvent = new NotebookCreatedDomainEvent(notebook);
-        
-        notebook.AddEvent(notebookCreatedDomainEvent);
-        
-        await _notebookRepository.AddAsync(notebook);
-        await _notebookRepository.SaveChangesAsync();
     }
 
     private async Task SendWelcomeMail(UserCreatedDomainEvent @event)

@@ -6,9 +6,6 @@ public class GetNonCategorizedTransactionReportQueryValidator : AbstractValidato
 {
     public GetNonCategorizedTransactionReportQueryValidator()
     {
-        RuleFor(p => p.NotebookId)
-            .GreaterThan(0);
-
         RuleFor(p => p.TransactionTypes)
             .IsInEnum();
     }

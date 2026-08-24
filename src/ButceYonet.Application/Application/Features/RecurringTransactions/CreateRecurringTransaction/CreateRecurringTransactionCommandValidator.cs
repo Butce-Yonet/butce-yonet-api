@@ -6,9 +6,6 @@ public class CreateRecurringTransactionCommandValidator : AbstractValidator<Crea
 {
     public CreateRecurringTransactionCommandValidator()
     {
-        RuleFor(p => p.NotebookId)
-            .GreaterThan(0);
-
         RuleFor(p => p.Name)
             .NotEmpty()
             .MaximumLength(128);

@@ -6,9 +6,6 @@ public class GetRecurringTransactionQueryValidator : AbstractValidator<GetRecurr
 {
     public GetRecurringTransactionQueryValidator()
     {
-        RuleFor(p => p.NotebookId)
-            .GreaterThan(0);
-
         RuleFor(p => p.RecurringTransactionId)
             .GreaterThan(0);
     }
