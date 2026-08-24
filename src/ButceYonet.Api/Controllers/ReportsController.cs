@@ -54,7 +54,7 @@ public class ReportsController : BaseController
     /// <summary>
     /// Dönem özeti raporu: seçilen dönem (ay / hafta / özel aralık) için toplam gelir, toplam gider, net bakiye ve önceki dönemle kıyas (% artış/azalış).
     /// </summary>
-    /// <param name="request">NotebookId, StartDate, EndDate, isteğe bağlı CurrencyId</param>
+    /// <param name="request">StartDate, EndDate, isteğe bağlı CurrencyId</param>
     /// <returns>PeriodSummaryReportDto</returns>
     [HttpGet("period-summary")]
     [ProducesResponseType(typeof(BaseResponse<PeriodSummaryReportDto>), StatusCodes.Status200OK)]
@@ -72,7 +72,7 @@ public class ReportsController : BaseController
     /// En çok neye para harcıyorum? Seçilen dönem için kategori bazlı gider dağılımı
     /// (toplam tutar, toplam harcama içindeki yüzdelik pay ve önceki dönem toplamı).
     /// </summary>
-    /// <param name="request">NotebookId, StartDate, EndDate, isteğe bağlı CurrencyId</param>
+    /// <param name="request">StartDate, EndDate, isteğe bağlı CurrencyId</param>
     /// <returns>CategorySpendingReportDto</returns>
     [HttpGet("category-spending")]
     [ProducesResponseType(typeof(BaseResponse<CategorySpendingReportDto>), StatusCodes.Status200OK)]

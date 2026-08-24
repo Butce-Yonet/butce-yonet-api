@@ -8,11 +8,15 @@ namespace ButceYonet.Application.Application.Features.PeriodSummaryReports.GetPe
 /// </summary>
 public class GetPeriodSummaryReportQuery : IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
     /// <summary>Dönem başlangıç tarihi (dahil)</summary>
     public DateTime StartDate { get; set; }
     /// <summary>Dönem bitiş tarihi (dahil)</summary>
     public DateTime EndDate { get; set; }
     /// <summary>Belirtilirse sadece bu para birimindeki tutarlar dahil edilir; null ise tüm para birimleri toplanır.</summary>
     public int? CurrencyId { get; set; }
+
+    public override string ToString()
+    {
+        return $"DotBoil:ButceYonet:Report:PeriodSummary:{StartDate}-{EndDate}-{CurrencyId}";
+    }
 }

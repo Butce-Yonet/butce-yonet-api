@@ -4,5 +4,6 @@ public class NotebookDto
 {
     public int Id { get; set; }
     public string Name { get; set; }
-    public bool IsDefault { get; set; }
+    public DateTime TermStart { get; set; }
+    public DateTime TermEnd { get; set; }
 }

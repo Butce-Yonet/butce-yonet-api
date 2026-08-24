@@ -12,7 +12,7 @@ public class RecurringTransactionEntityTypeConfiguration : EFCoreEntityTypeConfi
     public override void ConfigureDotBoilEntity(EntityTypeBuilder<RecurringTransaction> builder)
     {
         builder
-            .Property(p => p.NotebookId)
+            .Property(p => p.UserId)
             .IsRequired();
 
         builder

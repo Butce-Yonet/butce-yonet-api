@@ -6,7 +6,6 @@ public class UpdateTransactionCommandValidator : AbstractValidator<UpdateTransac
 {
     public UpdateTransactionCommandValidator()
     {
-        RuleFor(p => p.NotebookId).GreaterThan(0);
         RuleFor(p => p.TransactionId).GreaterThan(0);
         RuleFor(p => p.Name)
             .NotEmpty()

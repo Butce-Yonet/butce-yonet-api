@@ -11,7 +11,6 @@ public class RecurringTransactionProfile : Profile
     {
         CreateMap<RecurringTransaction, RecurringTransactionDto>()
             .ForMember(p => p.Id, p => p.MapFrom(p => p.Id))
-            .ForMember(p => p.Notebook, p => p.MapFrom<NotebookResolver>())
             .ForMember(p => p.Name, p => p.MapFrom(p => p.Name))
             .ForMember(p => p.Description, p => p.MapFrom(p => p.Description))
             .ForMember(p => p.StartDate, p => p.MapFrom(p => p.StartDate))
@@ -22,49 +21,21 @@ public class RecurringTransactionProfile : Profile
             .ForMember(p => p.Transaction, p => p.MapFrom<TransactionResolver>());
     }
 
-    public class NotebookResolver : IValueResolver<RecurringTransaction, RecurringTransactionDto, NotebookDto>
-    {
-        public NotebookDto Resolve(RecurringTransaction source, RecurringTransactionDto destination,
-            NotebookDto destMember,
-            ResolutionContext context)
-        {
-            if (context.Items.TryGetValue("Notebook", out object notebookObj))
-            {
-                var notebook = (Notebook)notebookObj;
-
-                if (notebook is null)
-                    return null;
-
-                return new NotebookDto
-                {
-                    Id = notebook.Id,
-                    IsDefault = notebook.IsDefault,
-                    Name = notebook.Name
-                };
-            }
-
-            return null;
-        }
-    }
-
     public class TransactionResolver : IValueResolver<RecurringTransaction, RecurringTransactionDto, TransactionDto>
     {
         public TransactionDto Resolve(RecurringTransaction source, RecurringTransactionDto destination,
             TransactionDto destMember,
             ResolutionContext context)
         {
-            Notebook notebook = null;
             Currency currency = null;
             List<UserLabel> userLabels = new List<UserLabel>();
 
-            if (context.Items.TryGetValue("Notebook", out object notebookObj))
-                notebook = (Notebook)notebookObj;
             if (context.Items.TryGetValue("Currency", out object currencyObj))
                 currency = (Currency)currencyObj;
             if (context.Items.TryGetValue("UserLabels", out object userLabelsObj))
                 userLabels = (List<UserLabel>)userLabelsObj;
 
-            if (notebook is null || currency is null)
+            if (currency is null)
                 return null;
 
             var transactions = JsonSerializer.Deserialize<List<TransactionV2>>(source.StateData);
@@ -76,7 +47,6 @@ public class RecurringTransactionProfile : Profile
 
             var dto = new TransactionDto
             {
-                NotebookId = notebook.Id,
                 Name = transaction.Name,
                 Description = transaction.Description,
                 Amount = transaction.Amount,
@@ -84,12 +54,6 @@ public class RecurringTransactionProfile : Profile
                 IsMatched = transaction.IsMatched,
                 IsProceed = false,
                 TransactionDate = transaction.TransactionDate,
-                Notebook = new NotebookDto
-                {
-                    Id = notebook.Id,
-                    IsDefault = notebook.IsDefault,
-                    Name = notebook.Name
-                },
                 Currency = new CurrencyDto
                 {
                     Id = currency.Id,

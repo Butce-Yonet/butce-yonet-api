@@ -5,16 +5,14 @@ namespace ButceYonet.Application.Application.Features.Transactions.DeleteTransac
 
 public class DeleteTransactionCommand : IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
     public int TransactionId { get; set; }
 
     public DeleteTransactionCommand()
     {
     }
 
-    public DeleteTransactionCommand(int notebookId, int transactionId)
+    public DeleteTransactionCommand(int transactionId)
     {
-        NotebookId = notebookId;
         TransactionId = transactionId;
     }
 }

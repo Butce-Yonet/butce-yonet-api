@@ -2,7 +2,6 @@ using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Domain.Entities;
-using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
 using DotBoil.Caching;
@@ -16,19 +15,22 @@ namespace ButceYonet.Application.Application.Features.Notebooks.DeleteNotebook;
 
 public class DeleteNotebookCommandHandler : BaseHandler<DeleteNotebookCommand, BaseResponse>
 {
-    private readonly IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
-    
+    private readonly IRepository<NotebookV2, ButceYonetDbContext> _notebookRepository;
+    private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
+
     public DeleteNotebookCommandHandler(
-        ICache cache, 
+        ICache cache,
         IUser user,
-        IMapper mapper, 
+        IMapper mapper,
         ILocalize localize,
-        IParameterManager parameter, 
+        IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<Notebook, ButceYonetDbContext> notebookRepository)
+        IRepository<NotebookV2, ButceYonetDbContext> notebookRepository,
+        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookRepository = notebookRepository;
+        _transactionRepository = transactionRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(DeleteNotebookCommand request, CancellationToken cancellationToken)
@@ -36,19 +38,18 @@ public class DeleteNotebookCommandHandler : BaseHandler<DeleteNotebookCommand, B
         var notebook = await
             _notebookRepository
                 .Get()
-                .Where(p => p.Id == request.Id && !p.IsDefault)
-                .Include(p => p.NotebookUsers)
+                .Where(p => p.Id == request.Id && p.UserId == _user.Id)
                 .FirstOrDefaultAsync();
 
         if (notebook is null)
-            throw new NotFoundException(typeof(Notebook));
+            throw new NotFoundException(typeof(NotebookV2));
 
-        if (!notebook.NotebookUsers.Any(p => p.UserId == _user.Id && p.IsDefault))
-            throw new NotFoundException(typeof(NotebookUser));
+        var hasTransactions = await _transactionRepository
+            .Get()
+            .AnyAsync(t => t.NotebookV2Id == notebook.Id);
 
-        var notebookDeletedDomainEvent = new NotebookDeletedDomainEvent(request.Id);
-        
-        notebook.AddEvent(notebookDeletedDomainEvent);
+        if (hasTransactions)
+            throw new BusinessRuleException("Bu döneme ait işlem kayıtları bulunduğundan silinemez");
 
         notebook.IsDeleted = true;
         _notebookRepository.Update(notebook);

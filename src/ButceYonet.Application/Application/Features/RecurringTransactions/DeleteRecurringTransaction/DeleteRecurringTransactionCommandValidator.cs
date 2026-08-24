@@ -6,9 +6,6 @@ public class DeleteRecurringTransactionCommandValidator : AbstractValidator<Dele
 {
     public DeleteRecurringTransactionCommandValidator()
     {
-        RuleFor(p => p.NotebookId)
-            .GreaterThan(0);
-
         RuleFor(p => p.RecurringTransactionId)
             .GreaterThan(0);
     }

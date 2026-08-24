@@ -21,14 +21,15 @@ public class NonCategorizedTransactionReportProfile : Profile
         public NotebookDto Resolve(NonCategorizedTransactionReport source, NonCategorizedTransactionReportDto destination,
             NotebookDto destMember, ResolutionContext context)
         {
-            if (source.Notebook is null)
+            if (source.NotebookV2 is null)
                 return null;
 
             return new NotebookDto
             {
-                Id = source.Notebook.Id,
-                Name = source.Notebook.Name,
-                IsDefault = source.Notebook.IsDefault
+                Id = source.NotebookV2.Id,
+                Name = source.NotebookV2.Name,
+                TermStart = source.NotebookV2.TermStart,
+                TermEnd = source.NotebookV2.TermEnd
             };
         }
     }

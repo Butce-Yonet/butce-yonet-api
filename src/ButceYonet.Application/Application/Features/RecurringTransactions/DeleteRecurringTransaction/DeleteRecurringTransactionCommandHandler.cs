@@ -15,42 +15,28 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.Dele
 
 public class DeleteRecurringTransactionCommandHandler : BaseHandler<DeleteRecurringTransactionCommand, BaseResponse>
 {
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
-    
+
     public DeleteRecurringTransactionCommandHandler(
-        ICache cache, 
-        IUser user, 
-        IMapper mapper, 
-        ILocalize localize, 
-        IParameterManager parameter, 
+        ICache cache,
+        IUser user,
+        IMapper mapper,
+        ILocalize localize,
+        IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookUserRepository = notebookUserRepository;
         _recurringTransactionRepository = recurringTransactionRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(DeleteRecurringTransactionCommand request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await
-            _notebookUserRepository
-                .Get()
-                .Where(nu =>
-                    nu.NotebookId == request.NotebookId &&
-                    nu.UserId == _user.Id)
-                .AnyAsync();
-
-        if (!isNotebookUser)
-            throw new BusinessRuleException(""); //TODO:
-
         var recurringTransaction = await
             _recurringTransactionRepository
                 .Get()
                 .Where(rt =>
-                    rt.NotebookId == request.NotebookId &&
+                    rt.UserId == _user.Id &&
                     rt.Id == request.RecurringTransactionId)
                 .FirstOrDefaultAsync();
 
@@ -60,7 +46,7 @@ public class DeleteRecurringTransactionCommandHandler : BaseHandler<DeleteRecurr
         recurringTransaction.IsDeleted = true;
         _recurringTransactionRepository.Update(recurringTransaction);
         await _recurringTransactionRepository.SaveChangesAsync();
-        
+
         return BaseResponse.Response(new {}, HttpStatusCode.OK);
     }
 }

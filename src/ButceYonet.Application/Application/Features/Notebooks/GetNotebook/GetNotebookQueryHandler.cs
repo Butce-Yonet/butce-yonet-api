@@ -16,16 +16,16 @@ namespace ButceYonet.Application.Application.Features.Notebooks.GetNotebook;
 
 public class GetNotebookQueryHandler : BaseHandler<GetNotebookQuery, BaseResponse>
 {
-    private readonly IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
-    
+    private readonly IRepository<NotebookV2, ButceYonetDbContext> _notebookRepository;
+
     public GetNotebookQueryHandler(
         ICache cache,
-        IUser user, 
+        IUser user,
         IMapper mapper,
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<Notebook, ButceYonetDbContext> notebookRepository)
+        IRepository<NotebookV2, ButceYonetDbContext> notebookRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _notebookRepository = notebookRepository;
@@ -35,12 +35,12 @@ public class GetNotebookQueryHandler : BaseHandler<GetNotebookQuery, BaseRespons
     {
         var notebook = await _notebookRepository
             .Get()
-            .Where(p => p.Id == request.Id)
+            .Where(p => p.Id == request.Id && p.UserId == _user.Id)
             .FirstOrDefaultAsync();
 
         if (notebook is null)
-            throw new NotFoundException(typeof(Notebook));
-        
+            throw new NotFoundException(typeof(NotebookV2));
+
         var notebookDto = _mapper.Map<NotebookDto>(notebook);
 
         return BaseResponse.Response(notebookDto, HttpStatusCode.OK);

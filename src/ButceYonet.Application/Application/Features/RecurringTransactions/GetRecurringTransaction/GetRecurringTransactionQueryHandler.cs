@@ -17,9 +17,7 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.GetR
 
 public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTransactionQuery, BaseResponse>
 {
-    private readonly IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
     private readonly IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
     private readonly IRepository<Currency, ButceYonetDbContext> _currencyRepository;
 
@@ -30,53 +28,29 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<Notebook, ButceYonetDbContext> notebookRepository,
         IRepository<UserLabel, ButceYonetDbContext> userLabelRepository,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository,
         IRepository<Currency, ButceYonetDbContext> currencyRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookRepository = notebookRepository;
         _userLabelRepository = userLabelRepository;
-        _notebookUserRepository = notebookUserRepository;
         _recurringTransactionRepository = recurringTransactionRepository;
         _currencyRepository = currencyRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(GetRecurringTransactionQuery request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await
-            _notebookUserRepository
-                .Get()
-                .Where(nu =>
-                    nu.NotebookId == request.NotebookId &&
-                    nu.UserId == _user.Id)
-                .AnyAsync();
-
-        if (!isNotebookUser)
-            throw new BusinessRuleException(""); //TODO:
-
         var recurringTransaction = await
             _recurringTransactionRepository
                 .Get()
                 .Where(rt =>
-                    rt.NotebookId == request.NotebookId &&
+                    rt.UserId == _user.Id &&
                     rt.Id == request.RecurringTransactionId &&
                     (!rt.EndDate.HasValue || rt.EndDate >= DateTime.Now))
                 .FirstOrDefaultAsync();
 
         if (recurringTransaction is null)
             throw new NotFoundException(typeof(RecurringTransaction));
-
-        var notebook = await
-            _notebookRepository
-                .Get()
-                .Where(n => n.Id == request.NotebookId)
-                .FirstOrDefaultAsync();
-
-        if (notebook is null)
-            throw new NotFoundException(typeof(Notebook));
 
         var transactions = JsonSerializer.Deserialize<List<TransactionV2>>(recurringTransaction.StateData);
         var transaction = transactions?.FirstOrDefault();
@@ -93,20 +67,13 @@ public class GetRecurringTransactionQueryHandler : BaseHandler<GetRecurringTrans
         if (currency is null)
             throw new NotFoundException(typeof(Currency));
 
-        var defaultUserId = await _notebookUserRepository
-            .Get()
-            .Where(nu => nu.NotebookId == request.NotebookId && nu.IsDefault)
-            .Select(nu => nu.UserId)
-            .FirstOrDefaultAsync();
-
         var userLabels = await _userLabelRepository
             .GetAll()
-            .Where(ul => ul.UserId == null || ul.UserId == defaultUserId)
+            .Where(ul => ul.UserId == null || ul.UserId == _user.Id)
             .ToListAsync();
 
         var recurringTransactionDto = _mapper.Map<RecurringTransactionDto>(recurringTransaction, opt =>
         {
-            opt.Items["Notebook"] = notebook;
             opt.Items["Currency"] = currency;
             opt.Items["UserLabels"] = userLabels;
         });

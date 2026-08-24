@@ -6,12 +6,8 @@ public class GetCategorySpendingReportQueryValidator : AbstractValidator<GetCate
 {
     public GetCategorySpendingReportQueryValidator()
     {
-        RuleFor(p => p.NotebookId)
-            .GreaterThan(0);
-
         RuleFor(p => p.StartDate)
             .LessThanOrEqualTo(p => p.EndDate)
             .WithMessage("Başlangıç tarihi bitiş tarihinden sonra olamaz.");
     }
 }
-

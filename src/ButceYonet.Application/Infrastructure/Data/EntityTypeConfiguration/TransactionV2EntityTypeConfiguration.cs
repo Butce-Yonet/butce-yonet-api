@@ -12,7 +12,8 @@ public class TransactionV2EntityTypeConfiguration : EFCoreEntityTypeConfiguratio
     public override void ConfigureDotBoilEntity(EntityTypeBuilder<TransactionV2> builder)
     {
         builder
-            .Property(p => p.NotebookId);
+            .Property(p => p.NotebookV2Id)
+            .IsRequired();
 
         builder
             .Property(p => p.ExternalId)
@@ -52,12 +53,6 @@ public class TransactionV2EntityTypeConfiguration : EFCoreEntityTypeConfiguratio
         builder
             .Property(p => p.TransactionDate)
             .IsRequired();
-
-        builder
-            .HasOne<Notebook>(p => p.Notebook)
-            .WithMany(p => p.Transactions)
-            .HasForeignKey(p => p.NotebookId)
-            .OnDelete(DeleteBehavior.NoAction);
 
         builder
             .HasOne<Currency>(p => p.Currency)

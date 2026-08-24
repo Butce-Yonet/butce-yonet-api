@@ -12,7 +12,7 @@ public class NonCategorizedTransactionReportEntityTypeConfiguration : EFCoreEnti
     public override void ConfigureDotBoilEntity(EntityTypeBuilder<NonCategorizedTransactionReport> builder)
     {
         builder
-            .Property(p => p.NotebookId)
+            .Property(p => p.NotebookV2Id)
             .IsRequired();
 
         builder
@@ -26,12 +26,6 @@ public class NonCategorizedTransactionReportEntityTypeConfiguration : EFCoreEnti
         builder
             .Property(p => p.Term)
             .IsRequired();
-        
-        builder
-            .HasOne<Notebook>(p => p.Notebook)
-            .WithMany(p => p.NonCategorizedTransactionReports)
-            .HasForeignKey(p => p.NotebookId)
-            .OnDelete(DeleteBehavior.NoAction);
         
         builder
             .HasOne<Currency>(p => p.Currency)

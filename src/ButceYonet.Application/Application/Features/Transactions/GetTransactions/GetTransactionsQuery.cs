@@ -6,7 +6,7 @@ namespace ButceYonet.Application.Application.Features.Transactions.GetTransactio
 
 public class GetTransactionsQuery : PaginationFilter, IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
+    public int? NotebookId { get; set; }
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
     public string Name { get; set; } = "";

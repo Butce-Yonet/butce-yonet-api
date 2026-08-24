@@ -5,16 +5,14 @@ namespace ButceYonet.Application.Application.Features.RecurringTransactions.Dele
 
 public class DeleteRecurringTransactionCommand : IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
     public int RecurringTransactionId { get; set; }
 
     public DeleteRecurringTransactionCommand()
     {
     }
 
-    public DeleteRecurringTransactionCommand(int notebookId, int recurringTransactionId)
+    public DeleteRecurringTransactionCommand(int recurringTransactionId)
     {
-        NotebookId = notebookId;
         RecurringTransactionId = recurringTransactionId;
     }
 }

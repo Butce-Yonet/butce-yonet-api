@@ -4,7 +4,6 @@ using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Application.Shared.Dtos;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Enums;
-using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
 using DotBoil.Caching;
 using DotBoil.EFCore;
@@ -18,7 +17,6 @@ namespace ButceYonet.Application.Application.Features.CategorySpendingReports.Ge
 
 public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpendingReportQuery, BaseResponse>
 {
-    private readonly IRepository<NotebookUser, ButceYonetDbContext> _notebookUserRepository;
     private readonly IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> _categorizedTransactionReportRepository;
     private readonly IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
 
@@ -29,33 +27,30 @@ public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpen
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<NotebookUser, ButceYonetDbContext> notebookUserRepository,
         IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> categorizedTransactionReportRepository,
         IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> nonCategorizedTransactionReportRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
-        _notebookUserRepository = notebookUserRepository;
         _categorizedTransactionReportRepository = categorizedTransactionReportRepository;
         _nonCategorizedTransactionReportRepository = nonCategorizedTransactionReportRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(GetCategorySpendingReportQuery request, CancellationToken cancellationToken)
     {
-        var isNotebookUser = await _notebookUserRepository
-            .Get()
-            .Where(nu => nu.NotebookId == request.NotebookId && nu.UserId == _user.Id)
-            .AnyAsync(cancellationToken);
+        var dto = await this._cache.GetOrSetAsync($"{request}:{_user.Id}", () => BuildReportAsync(request, cancellationToken), TimeSpan.FromMinutes(15));
 
-        if (!isNotebookUser)
-            throw new BusinessRuleException("User is not in notebook");
+        return BaseResponse.Response(dto, HttpStatusCode.OK);
+    }
 
+    private async Task<CategorySpendingReportDto> BuildReportAsync(GetCategorySpendingReportQuery request, CancellationToken cancellationToken)
+    {
         var startDate = request.StartDate.Date;
         var endDate = request.EndDate.Date;
 
         // Kategorize edilmiş giderler (sadece Expense)
         var categorizedBaseQuery = _categorizedTransactionReportRepository
             .GetAll()
-            .Where(ctr => ctr.NotebookId == request.NotebookId && ctr.TransactionType == TransactionTypes.Expense)
+            .Where(ctr => ctr.NotebookV2.UserId == _user.Id && ctr.TransactionType == TransactionTypes.Expense)
             .WhereIf(request.CurrencyId.HasValue, ctr => ctr.CurrencyId == request.CurrencyId.Value);
 
         var currentCategorized = await categorizedBaseQuery
@@ -66,7 +61,7 @@ public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpen
         // Genel toplam gider (kategori bağımsız) NonCategorizedTransactionReport üzerinden
         var nonCategorizedBaseQuery = _nonCategorizedTransactionReportRepository
             .GetAll()
-            .Where(nctr => nctr.NotebookId == request.NotebookId && nctr.TransactionType == TransactionTypes.Expense)
+            .Where(nctr => nctr.NotebookV2.UserId == _user.Id && nctr.TransactionType == TransactionTypes.Expense)
             .WhereIf(request.CurrencyId.HasValue, nctr => nctr.CurrencyId == request.CurrencyId.Value);
 
         var generalTotalAmount = await nonCategorizedBaseQuery
@@ -110,16 +105,12 @@ public class GetCategorySpendingReportQueryHandler : BaseHandler<GetCategorySpen
             .OrderByDescending(i => i.Amount)
             .ToList();
 
-        var dto = new CategorySpendingReportDto
+        return new CategorySpendingReportDto
         {
-            NotebookId = request.NotebookId,
             StartDate = startDate,
             EndDate = endDate,
             GeneralTotalAmount = generalTotalAmount,
             Items = items
         };
-
-        return BaseResponse.Response(dto, HttpStatusCode.OK);
     }
 }
-

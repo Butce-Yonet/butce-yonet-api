@@ -9,8 +9,6 @@ namespace ButceYonet.Application.Application.Features.CategorySpendingReports.Ge
 /// </summary>
 public class GetCategorySpendingReportQuery : IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
-
     /// <summary>Dönem başlangıç tarihi (dahil)</summary>
     public DateTime StartDate { get; set; }
 
@@ -22,5 +20,9 @@ public class GetCategorySpendingReportQuery : IRequest<BaseResponse>
     /// null ise tüm para birimleri toplanır.
     /// </summary>
     public int? CurrencyId { get; set; }
-}
 
+    public override string ToString()
+    {
+        return $"DotBoil:ButceYonet:Report:CategorySpending:{StartDate}-{EndDate}-{CurrencyId}";
+    }
+}

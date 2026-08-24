@@ -1,29 +1,22 @@
-using System.Collections.Concurrent;
+using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Events;
-using ButceYonet.Application.Infrastructure.Data;
-using DotBoil.EFCore;
-using DotBoil.MassTransit;
 using DotBoil.MassTransit.Attributes;
 using DotBoil.MassTransit.Consumers;
 using MassTransit;
-using Microsoft.EntityFrameworkCore;
 
 namespace ButceYonet.Consumers;
 
 [Consumer("transaction-updated")]
 public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpdatedDomainEvent>
 {
-    private readonly IServiceProvider _serviceProvider;
-    private IRepository<NonCategorizedTransactionReport, ButceYonetDbContext> _nonCategorizedTransactionReportRepository;
-    private IRepository<CategorizedTransactionReportV2, ButceYonetDbContext> _categorizedTransactionReportRepository;
+    private readonly ITransactionReportSyncService _reportSyncService;
 
-    private ConcurrentBag<NonCategorizedTransactionReport> _nonCategorizedTransactionReportBag;
-    private ConcurrentBag<CategorizedTransactionReportV2> _categorizedTransactionReportBag;
-
-    public TransactionUpdatedDomainEventConsumer(IServiceProvider serviceProvider) : base(serviceProvider)
+    public TransactionUpdatedDomainEventConsumer(
+        IServiceProvider serviceProvider,
+        ITransactionReportSyncService reportSyncService) : base(serviceProvider)
     {
-        _serviceProvider = serviceProvider;
+        _reportSyncService = reportSyncService;
     }
 
     public override async Task ConsumeEvent(ConsumeContext<TransactionUpdatedDomainEvent> context)
@@ -34,135 +27,27 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
         if (!context.Message.NewTransaction.IsProceed)
             return;
 
-        using var scope = _serviceProvider.CreateScope();
-        InitializeDependencies(scope);
+        var oldTransaction = context.Message.OldTransaction;
+        var newTransaction = context.Message.NewTransaction;
 
-        await ProcessNonCategorizedTransactionReport(context.Message.OldTransaction, true);
-        await ProcessCategorizedTransactionReport(context.Message.OldTransaction, true);
-
-        await ProcessNonCategorizedTransactionReport(context.Message.NewTransaction, false);
-        await ProcessCategorizedTransactionReport(context.Message.NewTransaction, false);
-
-        foreach (var nonCategorizedTransactionReport in _nonCategorizedTransactionReportBag)
-        {
-            if (nonCategorizedTransactionReport.Id == default(int))
-                await _nonCategorizedTransactionReportRepository.AddAsync(nonCategorizedTransactionReport);
-            else
-                _nonCategorizedTransactionReportRepository.Update(nonCategorizedTransactionReport);
-        }
-
-        foreach (var categorizedTransactionReport in _categorizedTransactionReportBag)
-        {
-            if (categorizedTransactionReport.Id == default(int))
-                await _categorizedTransactionReportRepository.AddAsync(categorizedTransactionReport);
-            else
-                _categorizedTransactionReportRepository.Update(categorizedTransactionReport);
-        }
-
-        await _nonCategorizedTransactionReportRepository.SaveChangesAsync();
+        // Categorized ve NonCategorized birbirinden bağımsız tablolara yazdığı için
+        // (ayrı scope/DbContext açtıklarından) paralel çalıştırılabilirler.
+        // Her ikisinde de eski tutar düşülüp yeni tutar eklenir; sıralı iki çağrı
+        // aynı bucket'a düşse bile birbirinin sonucunu görecek şekilde (SaveChanges her çağrıda tamamlanır) doğru netleşir.
+        await Task.WhenAll(
+            ProcessNonCategorizedAsync(oldTransaction, newTransaction),
+            ProcessCategorizedAsync(oldTransaction, newTransaction));
     }
 
-    private void InitializeDependencies(IServiceScope serviceScope)
+    private async Task ProcessNonCategorizedAsync(TransactionV2 oldTransaction, TransactionV2 newTransaction)
     {
-        _nonCategorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<NonCategorizedTransactionReport, ButceYonetDbContext>>();
-        _categorizedTransactionReportRepository = serviceScope.ServiceProvider.GetRequiredService<IRepository<CategorizedTransactionReportV2, ButceYonetDbContext>>();
-        _nonCategorizedTransactionReportBag = new ConcurrentBag<NonCategorizedTransactionReport>();
-        _categorizedTransactionReportBag = new ConcurrentBag<CategorizedTransactionReportV2>();
+        await _reportSyncService.SyncNonCategorizedAsync(oldTransaction, -oldTransaction.Amount);
+        await _reportSyncService.SyncNonCategorizedAsync(newTransaction, newTransaction.Amount);
     }
 
-    private async Task ProcessNonCategorizedTransactionReport(TransactionV2 transaction, bool isOldTransaction)
+    private async Task ProcessCategorizedAsync(TransactionV2 oldTransaction, TransactionV2 newTransaction)
     {
-        var transactionDate = transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
-
-        var nonCategorizedTransactionReport = default(NonCategorizedTransactionReport);
-
-        nonCategorizedTransactionReport = _nonCategorizedTransactionReportBag
-            .Where(item =>
-                item.NotebookId == transaction.NotebookId &&
-                item.TransactionType == transaction.TransactionType &&
-                item.CurrencyId == transaction.CurrencyId &&
-                item.Term == reportDate)
-            .FirstOrDefault();
-
-        if (nonCategorizedTransactionReport is null)
-        {
-            nonCategorizedTransactionReport = await _nonCategorizedTransactionReportRepository
-                .Get()
-                .Where(p =>
-                    p.NotebookId == transaction.NotebookId &&
-                    p.TransactionType == transaction.TransactionType &&
-                    p.CurrencyId == transaction.CurrencyId &&
-                    p.Term == reportDate)
-                .FirstOrDefaultAsync();
-
-            if (nonCategorizedTransactionReport is null)
-            {
-                nonCategorizedTransactionReport = new NonCategorizedTransactionReport
-                {
-                    NotebookId = transaction.NotebookId.Value,
-                    TransactionType = transaction.TransactionType,
-                    CurrencyId = transaction.CurrencyId,
-                    Term = reportDate
-                };
-            }
-
-            _nonCategorizedTransactionReportBag.Add(nonCategorizedTransactionReport);
-        }
-
-        if (isOldTransaction)
-            nonCategorizedTransactionReport.Amount -= transaction.Amount;
-        else
-            nonCategorizedTransactionReport.Amount += transaction.Amount;
-    }
-
-    private async Task ProcessCategorizedTransactionReport(TransactionV2 transaction, bool isOldTransaction)
-    {
-        var transactionDate = transaction.TransactionDate;
-        var reportDate = new DateTime(transactionDate.Year, transactionDate.Month, transactionDate.Day, 0, 0, 0);
-
-        foreach (var transactionLabel in transaction.TransactionLabelsV2.Where(tl => !tl.IsDeleted))
-        {
-            var categorizedTransactionReport = _categorizedTransactionReportBag
-                .Where(item =>
-                    item.NotebookId == transaction.NotebookId &&
-                    item.UserLabelId == transactionLabel.UserLabelId &&
-                    item.TransactionType == transaction.TransactionType &&
-                    item.CurrencyId == transaction.CurrencyId &&
-                    item.Term == reportDate)
-                .FirstOrDefault();
-
-            if (categorizedTransactionReport is null)
-            {
-                categorizedTransactionReport = await _categorizedTransactionReportRepository
-                    .Get()
-                    .Where(item =>
-                        item.NotebookId == transaction.NotebookId &&
-                        item.UserLabelId == transactionLabel.UserLabelId &&
-                        item.TransactionType == transaction.TransactionType &&
-                        item.CurrencyId == transaction.CurrencyId &&
-                        item.Term == reportDate)
-                    .FirstOrDefaultAsync();
-
-                if (categorizedTransactionReport is null)
-                {
-                    categorizedTransactionReport = new CategorizedTransactionReportV2
-                    {
-                        NotebookId = transaction.NotebookId.Value,
-                        UserLabelId = transactionLabel.UserLabelId,
-                        TransactionType = transaction.TransactionType,
-                        CurrencyId = transaction.CurrencyId,
-                        Term = reportDate
-                    };
-                }
-
-                _categorizedTransactionReportBag.Add(categorizedTransactionReport);
-            }
-
-            if (isOldTransaction)
-                categorizedTransactionReport.Amount -= transaction.Amount;
-            else
-                categorizedTransactionReport.Amount += transaction.Amount;
-        }
+        await _reportSyncService.SyncCategorizedAsync(oldTransaction, -oldTransaction.Amount);
+        await _reportSyncService.SyncCategorizedAsync(newTransaction, newTransaction.Amount);
     }
 }

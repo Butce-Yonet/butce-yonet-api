@@ -5,16 +5,14 @@ namespace ButceYonet.Application.Application.Features.Transactions.GetTransactio
 
 public class GetTransactionQuery : IRequest<BaseResponse>
 {
-    public int NotebookId { get; set; }
     public int TransactionId { get; set; }
 
     public GetTransactionQuery()
     {
     }
-    
-    public GetTransactionQuery(int notebookId, int transactionId)
+
+    public GetTransactionQuery(int transactionId)
     {
-        NotebookId = notebookId;
         TransactionId = transactionId;
     }
 }

@@ -6,6 +6,6 @@ public class GetTransactionsQueryValidator : AbstractValidator<GetTransactionsQu
 {
     public GetTransactionsQueryValidator()
     {
-        RuleFor(p => p.NotebookId).GreaterThan(0);
+        RuleFor(p => p.NotebookId).GreaterThan(0).When(p => p.NotebookId.HasValue);
     }
 }
