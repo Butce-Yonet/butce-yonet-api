@@ -16,13 +16,13 @@ public class GetLandingStatsQueryHandler : IRequestHandler<GetLandingStatsQuery,
 {
     private readonly ICache _cache;
     private readonly IRepository<Notebook, ButceYonetDbContext> _notebookRepository;
-    private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
+    private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
     private readonly IRepository<User, ButceYonetAuthorizationDbContext> _userRepository;
 
     public GetLandingStatsQueryHandler(
         ICache cache,
         IRepository<Notebook, ButceYonetDbContext> notebookRepository,
-        IRepository<Transaction, ButceYonetDbContext> transactionRepository,
+        IRepository<TransactionV2, ButceYonetDbContext> transactionRepository,
         IRepository<User, ButceYonetAuthorizationDbContext> userRepository)
     {
         _cache = cache;

@@ -11,9 +11,9 @@ namespace ButceYonet.Application.Application.Shared.UserPlanRuleValidators;
 
 public class NotebookTransactionCount : IUserPlanRuleValidator
 {
-    private readonly IRepository<Transaction, ButceYonetDbContext> _transactionRepository;
+    private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
 
-    public NotebookTransactionCount(IRepository<Transaction, ButceYonetDbContext> transactionRepository)
+    public NotebookTransactionCount(IRepository<TransactionV2, ButceYonetDbContext> transactionRepository)
     {
         _transactionRepository = transactionRepository;
     }

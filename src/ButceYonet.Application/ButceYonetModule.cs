@@ -36,32 +36,22 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<IUser, User>();
         DotBoilApp.Services.AddScoped<IRecurringTransactionIntervalsService, RecurringTransactionIntervalsService>();
         DotBoilApp.Services.AddHostedService<RecurringTransactionJob>();
-        DotBoilApp.Services.AddHostedService<NotebookLabelToNotebookLabelV2>();
         #region User Plan Rule Validators
 
         DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookCountRuleValidator>(PlanFeatures.NotebookCount
             .ToString());
-        
-        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookUserCountRuleValidator>(PlanFeatures.NotebookUserCount
-            .ToString());
-        
-        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookLabelCountRuleValidator>(PlanFeatures.NotebookLabelCount
+
+        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookUserCountRuleValidator>(PlanFeatures
+            .NotebookUserCount
             .ToString());
         
         DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookTransactionCount>(PlanFeatures.NotebookTransactionCount
-            .ToString());
-        
-        DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, BankAccountCountRuleValidator>(PlanFeatures.BankAccountCount
             .ToString());
 
         #endregion
         
         DotBoilApp.Services.AddTransient<RecurringTransactionProfile.NotebookResolver>();
         DotBoilApp.Services.AddTransient<RecurringTransactionProfile.TransactionResolver>();
-
-        DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.NotebookResolver>();
-        DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.UserLabelResolver>();
-        DotBoilApp.Services.AddTransient<CategorizedTransactionReportProfile.CurrencyResolver>();
 
         DotBoilApp.Services.AddTransient<NonCategorizedTransactionReportProfile.NotebookResolver>();
         DotBoilApp.Services.AddTransient<NonCategorizedTransactionReportProfile.CurrencyResolver>();

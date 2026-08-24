@@ -68,9 +68,7 @@ public class CreateTransactionCommandHandler : BaseHandler<CreateTransactionComm
             .GetAll()
             .Where(ul => ul.UserId == null || ul.UserId == defaultUserId)
             .ToListAsync();
-
-        var pendingLabels = new List<(Transaction transaction, List<int> labelIds)>();
-
+        
         foreach (var requestItem in request.Transactions)
         {
             var matchingLabelIds = userLabels

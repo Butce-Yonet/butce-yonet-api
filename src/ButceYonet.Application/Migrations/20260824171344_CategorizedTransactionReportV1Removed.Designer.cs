@@ -3,6 +3,7 @@ using System;
 using ButceYonet.Application.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,14 +11,112 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ButceYonet.Application.Migrations
 {
     [DbContext(typeof(ButceYonetDbContext))]
-    partial class ButceYonetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260824171344_CategorizedTransactionReportV1Removed")]
+    partial class CategorizedTransactionReportV1Removed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.Bank", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Bid")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ModifyUser")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Banks", (string)null);
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.BankAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("BankId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ModifyUser")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("NotebookId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankId");
+
+                    b.HasIndex("NotebookId");
+
+                    b.ToTable("BankAccounts", (string)null);
+                });
 
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.CategorizedTransactionReportV2", b =>
                 {
@@ -482,6 +581,9 @@ namespace ButceYonet.Application.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("BankAccountId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreateTime")
                         .HasColumnType("datetime(6)");
 
@@ -534,6 +636,8 @@ namespace ButceYonet.Application.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId");
 
                     b.HasIndex("CurrencyId");
 
@@ -622,6 +726,25 @@ namespace ButceYonet.Application.Migrations
                     b.HasIndex("PlanId");
 
                     b.ToTable("UserPlans", (string)null);
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.BankAccount", b =>
+                {
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Bank", "Bank")
+                        .WithMany("BankAccounts")
+                        .HasForeignKey("BankId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Notebook", "Notebook")
+                        .WithMany("BankAccounts")
+                        .HasForeignKey("NotebookId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Bank");
+
+                    b.Navigation("Notebook");
                 });
 
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.CategorizedTransactionReportV2", b =>
@@ -713,6 +836,11 @@ namespace ButceYonet.Application.Migrations
 
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.TransactionV2", b =>
                 {
+                    b.HasOne("ButceYonet.Application.Domain.Entities.BankAccount", "BankAccount")
+                        .WithMany("Transactions")
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("ButceYonet.Application.Domain.Entities.Currency", "Currency")
                         .WithMany("Transactions")
                         .HasForeignKey("CurrencyId")
@@ -723,6 +851,8 @@ namespace ButceYonet.Application.Migrations
                         .WithMany("Transactions")
                         .HasForeignKey("NotebookId")
                         .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("BankAccount");
 
                     b.Navigation("Currency");
 
@@ -740,6 +870,16 @@ namespace ButceYonet.Application.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.Bank", b =>
+                {
+                    b.Navigation("BankAccounts");
+                });
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.BankAccount", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.Currency", b =>
                 {
                     b.Navigation("NonCategorizedTransactionReports");
@@ -749,6 +889,8 @@ namespace ButceYonet.Application.Migrations
 
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.Notebook", b =>
                 {
+                    b.Navigation("BankAccounts");
+
                     b.Navigation("NonCategorizedTransactionReports");
 
                     b.Navigation("NotebookUsers");

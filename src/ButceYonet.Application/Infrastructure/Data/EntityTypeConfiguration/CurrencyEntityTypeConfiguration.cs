@@ -31,13 +31,7 @@ public class CurrencyEntityTypeConfiguration : EFCoreEntityTypeConfiguration<Cur
             .IsRequired();
 
         builder
-            .HasMany<Transaction>(p => p.Transactions)
-            .WithOne(p => p.Currency)
-            .HasForeignKey(p => p.CurrencyId)
-            .OnDelete(DeleteBehavior.NoAction);
-        
-        builder
-            .HasMany<CategorizedTransactionReport>(p => p.CategorizedTransactionReports)
+            .HasMany<TransactionV2>(p => p.Transactions)
             .WithOne(p => p.Currency)
             .HasForeignKey(p => p.CurrencyId)
             .OnDelete(DeleteBehavior.NoAction);

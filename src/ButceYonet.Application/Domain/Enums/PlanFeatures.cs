@@ -20,10 +20,5 @@ public enum PlanFeatures
     /// <summary>
     /// Deftere eklenebilen işlem sayısı
     /// </summary>
-    NotebookTransactionCount,
-    
-    /// <summary>
-    /// Oluşturulabilir banka hesabı sayısı
-    /// </summary>
-    BankAccountCount
+    NotebookTransactionCount
 }
