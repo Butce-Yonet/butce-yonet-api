@@ -42,6 +42,10 @@
       <EmbeddedResource Include="Infrastructure\MailTemplates\RecurringTransactionEndedTemplate.cshtml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </EmbeddedResource>
+      <None Remove="Infrastructure\MailTemplates\SubscriptionReminderTemplate.cshtml" />
+      <EmbeddedResource Include="Infrastructure\MailTemplates\SubscriptionReminderTemplate.cshtml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
     </ItemGroup>
 
 </Project>

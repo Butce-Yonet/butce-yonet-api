@@ -1,3 +1,4 @@
+using ButceYonet.Application.Domain.Enums;
 using FluentValidation;
 
 namespace ButceYonet.Application.Application.Features.Transactions.UpdateTransaction;
@@ -14,6 +15,9 @@ public class UpdateTransactionCommandValidator : AbstractValidator<UpdateTransac
             .MaximumLength(1000);
         RuleFor(p => p.CurrencyId)
             .GreaterThan(0);
-        RuleFor(p => p.TransactionType).IsInEnum();
+        RuleFor(p => p.TransactionType)
+            .IsInEnum()
+            .NotEqual(TransactionTypes.Saving)
+            .WithMessage("Birikim tipinde işlem yalnızca hedefe katkı ekleyerek oluşturulabilir.");
     }
 }

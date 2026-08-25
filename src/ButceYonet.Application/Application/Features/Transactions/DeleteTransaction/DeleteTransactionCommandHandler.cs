@@ -2,6 +2,7 @@ using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Domain.Entities;
+using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
@@ -44,6 +45,9 @@ public class DeleteTransactionCommandHandler : BaseHandler<DeleteTransactionComm
 
         if (transaction is null)
             throw new NotFoundException(typeof(TransactionV2));
+
+        if (transaction.TransactionType == TransactionTypes.Saving)
+            throw new BusinessRuleException("Birikim işlemleri hedef üzerinden yönetilir, buradan silinemez.");
 
         var transactionDeletedDomainEvent = new TransactionDeletedDomainEvent(transaction);
         transaction.AddEvent(transactionDeletedDomainEvent);

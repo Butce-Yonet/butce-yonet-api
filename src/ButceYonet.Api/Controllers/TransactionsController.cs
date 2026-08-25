@@ -1,5 +1,6 @@
 using ButceYonet.Application.Application.Features.Transactions.CreateTransaction;
 using ButceYonet.Application.Application.Features.Transactions.DeleteTransaction;
+using ButceYonet.Application.Application.Features.Transactions.GetCalendar;
 using ButceYonet.Application.Application.Features.Transactions.GetTransaction;
 using ButceYonet.Application.Application.Features.Transactions.GetTransactions;
 using ButceYonet.Application.Application.Features.Transactions.UpdateTransaction;
@@ -30,6 +31,24 @@ public class TransactionsController : BaseController
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> List([FromQuery] GetTransactionsQuery request)
+    {
+        var response = await _mediator.Send(request);
+        return Response(response);
+    }
+
+    /// <summary>
+    /// Belirli bir ay için takvim görünümü: her güne ait toplam gelir/gider ve önizleme işlemleri.
+    /// Bir güne ait tüm işlemler için StartTime/EndTime filtresiyle transaction listesi ayrıca sorgulanmalıdır.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    [HttpGet("calendar")]
+    [ProducesResponseType(typeof(BaseResponse<CalendarMonthDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetCalendar([FromQuery] GetCalendarQuery request)
     {
         var response = await _mediator.Send(request);
         return Response(response);

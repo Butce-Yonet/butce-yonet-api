@@ -10,5 +10,11 @@ public enum TransactionTypes
     /// <summary>
     /// Gider
     /// </summary>
-    Expense
+    Expense,
+
+    /// <summary>
+    /// Birikim (Hedef) — para çıkmaz, yer değiştirir. Gider olarak sayılmaz.
+    /// Yalnızca hedefe katkı akışıyla oluşturulur, genel Transaction CRUD'dan girilemez.
+    /// </summary>
+    Saving
 }

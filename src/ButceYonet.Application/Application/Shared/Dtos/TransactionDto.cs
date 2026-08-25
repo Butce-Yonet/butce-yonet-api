@@ -6,6 +6,7 @@ public class TransactionDto
 {
     public int Id { get; set; }
     public int NotebookId { get; set; }
+    public int? GoalId { get; set; }
     public string ExternalId { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }

@@ -2,6 +2,7 @@ using System.Net;
 using AutoMapper;
 using ButceYonet.Application.Application.Interfaces;
 using ButceYonet.Application.Domain.Entities;
+using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Domain.Exceptions;
 using ButceYonet.Application.Infrastructure.Data;
@@ -54,6 +55,9 @@ public class UpdateTransactionCommandHandler : BaseHandler<UpdateTransactionComm
 
         if (transaction is null)
             throw new NotFoundException(typeof(TransactionV2));
+
+        if (transaction.TransactionType == TransactionTypes.Saving)
+            throw new BusinessRuleException("Birikim işlemleri hedef üzerinden yönetilir, buradan güncellenemez.");
 
         var currentTermStart = new DateTime(transaction.NotebookV2.TermStart.Year, transaction.NotebookV2.TermStart.Month, 1);
         var newTermStart = new DateTime(request.TransactionDate.Year, request.TransactionDate.Month, 1);

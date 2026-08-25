@@ -10,10 +10,14 @@ public class UserLabel : BaseEntity
 
     public virtual ICollection<TransactionLabelV2> TransactionLabelsV2 { get; set; }
     public virtual ICollection<CategorizedTransactionReportV2> CategorizedTransactionReportV2s { get; set; }
+    public virtual ICollection<SubscriptionLabel> SubscriptionLabels { get; set; }
+    public virtual ICollection<GoalLabel> GoalLabels { get; set; }
 
     public UserLabel()
     {
         TransactionLabelsV2 = new List<TransactionLabelV2>();
         CategorizedTransactionReportV2s = new List<CategorizedTransactionReportV2>();
+        SubscriptionLabels = new List<SubscriptionLabel>();
+        GoalLabels = new List<GoalLabel>();
     }
 }
