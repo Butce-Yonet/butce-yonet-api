@@ -41,6 +41,7 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddHostedService<SubscriptionReminderJob>();
         DotBoilApp.Services.AddHostedService<RecalculateNonCategorizedTransactionReport>();
         DotBoilApp.Services.AddHostedService<RecalculateCategorizedTransactionReport>();
+        DotBoilApp.Services.AddHostedService<EngagementSignalJob>();
         #region User Plan Rule Validators
 
         DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookTransactionCount>(PlanFeatures.NotebookTransactionCount

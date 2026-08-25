@@ -3,6 +3,7 @@ using System;
 using ButceYonet.Application.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ButceYonet.Application.Migrations
 {
     [DbContext(typeof(ButceYonetDbContext))]
-    partial class ButceYonetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260825122344_AddEngagementSignals")]
+    partial class AddEngagementSignals
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -181,11 +184,6 @@ namespace ButceYonet.Application.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<bool>("IsSent")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(false);
-
                     b.Property<string>("ModifyUser")
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
@@ -196,9 +194,6 @@ namespace ButceYonet.Application.Migrations
                     b.Property<string>("PayloadJson")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("SentAt")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<int?>("TransactionId")
                         .HasColumnType("int");
@@ -221,8 +216,6 @@ namespace ButceYonet.Application.Migrations
                     b.HasIndex("TransactionId");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("IsSent", "OccurredAt");
 
                     b.ToTable("EngagementSignals", (string)null);
                 });

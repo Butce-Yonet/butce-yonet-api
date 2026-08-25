@@ -20,6 +20,7 @@ public class ButceYonetDbContext : EFCoreDbContext
     public DbSet<TransactionV2> TransactionsV2 { get; set; }
     public DbSet<CategorizedTransactionReportV2> CategorizedTransactionReportsV2 { get; set; }
     public DbSet<NotebookV2> NotebookV2s { get; set; }
+    public DbSet<EngagementSignal> EngagementSignals { get; set; }
 
     public ButceYonetDbContext(IServiceProvider serviceProvider) : base(serviceProvider)
     {
