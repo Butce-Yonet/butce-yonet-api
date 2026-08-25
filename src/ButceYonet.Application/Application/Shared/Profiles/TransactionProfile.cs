@@ -11,6 +11,7 @@ public class TransactionProfile : Profile
         CreateMap<TransactionV2, TransactionDto>()
             .ForMember(p => p.Id, p => p.MapFrom(p => p.Id))
             .ForMember(p => p.NotebookId, p => p.MapFrom(p => p.NotebookV2Id))
+            .ForMember(p => p.GoalId, p => p.MapFrom(p => p.GoalId))
             .ForMember(p => p.Name, p => p.MapFrom(p => p.Name))
             .ForMember(p => p.Description, p => p.MapFrom(p => p.Description))
             .ForMember(p => p.Amount, p => p.MapFrom(p => p.Amount))

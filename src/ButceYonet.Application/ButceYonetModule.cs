@@ -38,6 +38,7 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<INotebookPeriodResolver, NotebookPeriodResolver>();
         DotBoilApp.Services.AddScoped<ITransactionReportSyncService, TransactionReportSyncService>();
         DotBoilApp.Services.AddHostedService<RecurringTransactionJob>();
+        DotBoilApp.Services.AddHostedService<SubscriptionReminderJob>();
         DotBoilApp.Services.AddHostedService<RecalculateNonCategorizedTransactionReport>();
         DotBoilApp.Services.AddHostedService<RecalculateCategorizedTransactionReport>();
         #region User Plan Rule Validators
