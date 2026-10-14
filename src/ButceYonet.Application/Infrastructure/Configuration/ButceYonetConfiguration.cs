@@ -8,4 +8,5 @@ public class ButceYonetConfiguration : IOptions
 
     public string MainConnectionString { get; set; }
     public string AuthorizationConnectionString { get; set; }
+    public List<string> Jobs { get; set; } = new();
 }

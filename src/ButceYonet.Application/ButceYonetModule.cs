@@ -14,6 +14,7 @@ using DotBoil.EFCore;
 using DotBoil.Localization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace ButceYonet.Application;
 
@@ -29,7 +30,9 @@ public class ButceYonetModule : Module
     
     public override Task AddModule()
     {
-        DotBoilApp.Services.AddSingleton(typeof(ButceYonetConfiguration), DotBoilApp.Configuration.GetConfigurations<ButceYonetConfiguration>());
+        var configuration = DotBoilApp.Configuration.GetConfigurations<ButceYonetConfiguration>();
+
+        DotBoilApp.Services.AddSingleton(typeof(ButceYonetConfiguration), configuration);
         DotBoilApp.Services.AddScoped<IAuditUser, CurrentUser>();
         DotBoilApp.Services.AddScoped<ICurrentLanguage, CurrentLanguage>();
         DotBoilApp.Services.AddScoped<IUserPlanValidator, UserPlanValidator>();
@@ -37,11 +40,12 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<IRecurringTransactionIntervalsService, RecurringTransactionIntervalsService>();
         DotBoilApp.Services.AddScoped<INotebookPeriodResolver, NotebookPeriodResolver>();
         DotBoilApp.Services.AddScoped<ITransactionReportSyncService, TransactionReportSyncService>();
-        DotBoilApp.Services.AddHostedService<RecurringTransactionJob>();
-        DotBoilApp.Services.AddHostedService<SubscriptionReminderJob>();
-        DotBoilApp.Services.AddHostedService<RecalculateNonCategorizedTransactionReport>();
-        DotBoilApp.Services.AddHostedService<RecalculateCategorizedTransactionReport>();
-        DotBoilApp.Services.AddHostedService<EngagementSignalJob>();
+
+        RegisterHostedServiceIfEnabled<RecurringTransactionJob>(configuration);
+        RegisterHostedServiceIfEnabled<SubscriptionReminderJob>(configuration);
+        RegisterHostedServiceIfEnabled<RecalculateNonCategorizedTransactionReport>(configuration);
+        RegisterHostedServiceIfEnabled<RecalculateCategorizedTransactionReport>(configuration);
+        RegisterHostedServiceIfEnabled<EngagementSignalJob>(configuration);
         #region User Plan Rule Validators
 
         DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookTransactionCount>(PlanFeatures.NotebookTransactionCount
@@ -61,5 +65,14 @@ public class ButceYonetModule : Module
     {
         ((WebApplication)DotBoilApp.Host).UseMiddleware<ApiExceptionHandlingMiddleware>();
         return Task.CompletedTask;
+    }
+
+    private static void RegisterHostedServiceIfEnabled<THostedService>(ButceYonetConfiguration configuration)
+        where THostedService : class, IHostedService
+    {
+        if (configuration.Jobs.Contains(typeof(THostedService).Name, StringComparer.OrdinalIgnoreCase))
+        {
+            DotBoilApp.Services.AddHostedService<THostedService>();
+        }
     }
 }
