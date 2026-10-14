@@ -18,17 +18,26 @@ public class GetLandingStatsQueryHandler : IRequestHandler<GetLandingStatsQuery,
     private readonly IRepository<NotebookV2, ButceYonetDbContext> _notebookRepository;
     private readonly IRepository<TransactionV2, ButceYonetDbContext> _transactionRepository;
     private readonly IRepository<User, ButceYonetAuthorizationDbContext> _userRepository;
+    private readonly IRepository<Subscription, ButceYonetDbContext> _subscriptionRepository;
+    private readonly IRepository<Goal, ButceYonetDbContext> _goalRepository;
+    private readonly IRepository<RecurringTransaction, ButceYonetDbContext> _recurringTransactionRepository;
 
     public GetLandingStatsQueryHandler(
         ICache cache,
         IRepository<NotebookV2, ButceYonetDbContext> notebookRepository,
         IRepository<TransactionV2, ButceYonetDbContext> transactionRepository,
-        IRepository<User, ButceYonetAuthorizationDbContext> userRepository)
+        IRepository<User, ButceYonetAuthorizationDbContext> userRepository,
+        IRepository<Subscription, ButceYonetDbContext> subscriptionRepository,
+        IRepository<Goal, ButceYonetDbContext> goalRepository,
+        IRepository<RecurringTransaction, ButceYonetDbContext> recurringTransactionRepository)
     {
         _cache = cache;
         _notebookRepository = notebookRepository;
         _transactionRepository = transactionRepository;
         _userRepository = userRepository;
+        _subscriptionRepository = subscriptionRepository;
+        _goalRepository = goalRepository;
+        _recurringTransactionRepository = recurringTransactionRepository;
     }
 
     public async Task<BaseResponse> Handle(GetLandingStatsQuery request, CancellationToken cancellationToken)
@@ -70,6 +79,21 @@ public class GetLandingStatsQueryHandler : IRequestHandler<GetLandingStatsQuery,
             .Where(t => t.TransactionType == TransactionTypes.Expense)
             .SumAsync(t => t.Amount, cancellationToken);
 
+        var totalSubscriptions = await _subscriptionRepository.Get().CountAsync(cancellationToken);
+        var newSubscriptionsThisMonth = await _subscriptionRepository.Get()
+            .Where(s => s.CreateTime >= startOfMonth)
+            .CountAsync(cancellationToken);
+
+        var totalGoals = await _goalRepository.Get().CountAsync(cancellationToken);
+        var newGoalsThisMonth = await _goalRepository.Get()
+            .Where(g => g.CreateTime >= startOfMonth)
+            .CountAsync(cancellationToken);
+
+        var totalGoalSavings = await _goalRepository.Get().SumAsync(g => g.CurrentAmount, cancellationToken);
+        var averageGoalSavings = totalGoals > 0 ? totalGoalSavings / totalGoals : 0;
+
+        var totalRecurringTransactions = await _recurringTransactionRepository.Get().CountAsync(cancellationToken);
+
         return new LandingStatsDto
         {
             TotalNotebooks = totalNotebooks,
@@ -80,7 +104,14 @@ public class GetLandingStatsQueryHandler : IRequestHandler<GetLandingStatsQuery,
             NewTransactionsLastMonth = newTransactionsLastMonth,
             TotalIncome = totalIncome,
             TotalExpense = totalExpense,
-            TotalVolume = totalIncome + totalExpense
+            TotalVolume = totalIncome + totalExpense,
+            TotalSubscriptions = totalSubscriptions,
+            NewSubscriptionsThisMonth = newSubscriptionsThisMonth,
+            TotalGoals = totalGoals,
+            NewGoalsThisMonth = newGoalsThisMonth,
+            TotalRecurringTransactions = totalRecurringTransactions,
+            TotalGoalSavings = totalGoalSavings,
+            AverageGoalSavings = averageGoalSavings
         };
     }
 }
