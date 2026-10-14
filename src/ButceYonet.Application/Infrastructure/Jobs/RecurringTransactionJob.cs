@@ -23,6 +23,10 @@ namespace ButceYonet.Application.Infrastructure.Jobs;
 
 public class RecurringTransactionJob : BackgroundService
 {
+    // Tek bir kayit icin bir kosuda islenecek azami occurrence sayisi; cok eski tarihli
+    // kayitlarin tek seferde devasa islem uretmesini engeller.
+    private const int MaxOccurrencesPerRun = 500;
+
     private readonly ILogger<RecurringTransactionJob> _logger;
     private readonly IServiceProvider _serviceProvider;
 
@@ -64,14 +68,17 @@ public class RecurringTransactionJob : BackgroundService
         var notebookPeriodResolver = scope.ServiceProvider.GetService<INotebookPeriodResolver>();
 
         var today = DateTime.UtcNow.Date;
-        var startOfDay = today;
         var endOfDay = today.AddDays(1).AddTicks(-1);
 
+        // NextOccurrence'i bugun ve oncesine dusen tum kayitlar alinir. Boylece gecmis tarihli
+        // baslangic girilen ya da job'un calismadigi gunlerde vadesi gecen kayitlar da yakalanir.
+        // EndDate kontrolu bugune gore yapilir: EndDate'i bugunden onceki, yani zaten tamamen
+        // sona ermis seriler sorguya hic girmez - aksi halde uzun sure once bitmis bir seri
+        // aylar sonra "yeniden canlanip" gecmis tarihli islem ve seri-bitti maili uretebilir.
         var recurringTransactions = await recurringTransactionRepository
             .GetAll()
             .Where(rt =>
                 rt.NextOccurrence.HasValue &&
-                rt.NextOccurrence.Value >= startOfDay &&
                 rt.NextOccurrence.Value <= endOfDay &&
                 (!rt.EndDate.HasValue || rt.EndDate.Value.Date >= today))
             .ToListAsync();
@@ -82,61 +89,92 @@ public class RecurringTransactionJob : BackgroundService
         foreach (var recurringTransaction in recurringTransactions)
         {
             var transactions = JsonSerializer.Deserialize<List<TransactionV2>>(recurringTransaction.StateData);
+            var firstTransaction = transactions?.FirstOrDefault();
 
-            if (!transactions.Any())
+            var processedOccurrenceCount = 0;
+
+            // Vadesi gecmis occurrence'lar bugune kadar sirayla islenir; her biri kendi tarihine
+            // ait deftere ve kendi tarihiyle yazilir.
+            while (recurringTransaction.NextOccurrence.HasValue &&
+                   recurringTransaction.NextOccurrence.Value <= endOfDay &&
+                   !IsAfterEndDate(recurringTransaction, recurringTransaction.NextOccurrence.Value))
             {
-                recurringTransaction.NextOccurrence =
-                    recurringTransactionIntervalsService.CalculateInterval(recurringTransaction.NextOccurrence.Value,
-                        recurringTransaction.Frequency, recurringTransaction.Interval);
+                var occurrenceDate = recurringTransaction.NextOccurrence.Value;
 
-                recurringTransactionRepository.Update(recurringTransaction);
-                continue;
+                var nextOccurrence = recurringTransactionIntervalsService.CalculateInterval(
+                    occurrenceDate,
+                    recurringTransaction.Frequency,
+                    recurringTransaction.Interval);
+
+                // Hatali konfigurasyon (or. Interval = 0) tarihi ilerletmez; sonsuz donguyu ve
+                // mukerrer islem uretimini onlemek icin kayit atlanir.
+                if (nextOccurrence <= occurrenceDate)
+                {
+                    _logger.LogError(
+                        "Recurring transaction {RecurringTransactionId} has a non-advancing interval (Frequency: {Frequency}, Interval: {Interval}). Skipping.",
+                        recurringTransaction.Id,
+                        recurringTransaction.Frequency,
+                        recurringTransaction.Interval);
+                    break;
+                }
+
+                if (processedOccurrenceCount >= MaxOccurrencesPerRun)
+                {
+                    _logger.LogWarning(
+                        "Recurring transaction {RecurringTransactionId} reached the per-run occurrence limit ({Limit}). Remaining occurrences will be processed on the next run.",
+                        recurringTransaction.Id,
+                        MaxOccurrencesPerRun);
+                    break;
+                }
+
+                if (firstTransaction is not null)
+                {
+                    var notebook = await notebookPeriodResolver.ResolveOrCreateAsync(recurringTransaction.UserId, occurrenceDate, cancellationToken);
+
+                    var transaction = new TransactionV2()
+                    {
+                        NotebookV2Id = notebook.Id,
+                        ExternalId = Guid.NewGuid().ToString(),
+                        Name = firstTransaction.Name,
+                        Description = firstTransaction.Description,
+                        Amount = firstTransaction.Amount,
+                        CurrencyId = firstTransaction.CurrencyId,
+                        TransactionType = firstTransaction.TransactionType,
+                        TransactionDate = occurrenceDate
+                    };
+
+                    transaction.TransactionLabelsV2 = (firstTransaction.TransactionLabelsV2 ?? new List<TransactionLabelV2>())
+                        .Select(tl => new TransactionLabelV2
+                        {
+                            UserLabelId = tl.UserLabelId
+                        }).ToList();
+
+                    transaction.IsMatched = transaction.TransactionLabelsV2.Any();
+
+                    var transactionCreatedDomainEvent = new TransactionCreatedDomainEvent(transaction);
+                    transaction.AddEvent(transactionCreatedDomainEvent);
+                    await transactionRepository.AddAsync(transaction);
+
+                    if (!processedItemsByUser.TryGetValue(recurringTransaction.UserId, out var list))
+                    {
+                        list = new List<(string Name, string Description, decimal Amount, int CurrencyId, TransactionTypes TransactionType)>();
+                        processedItemsByUser[recurringTransaction.UserId] = list;
+                    }
+                    list.Add((recurringTransaction.Name, firstTransaction.Description ?? "", firstTransaction.Amount, firstTransaction.CurrencyId, firstTransaction.TransactionType));
+                }
+
+                recurringTransaction.NextOccurrence = nextOccurrence;
+                processedOccurrenceCount++;
             }
 
-            var firstTransaction = transactions.FirstOrDefault();
-
-            var notebook = await notebookPeriodResolver.ResolveOrCreateAsync(recurringTransaction.UserId, DateTime.Now, cancellationToken);
-
-            var transaction = new TransactionV2()
-            {
-                NotebookV2Id = notebook.Id,
-                ExternalId = Guid.NewGuid().ToString(),
-                Name = firstTransaction.Name,
-                Description = firstTransaction.Description,
-                Amount = firstTransaction.Amount,
-                CurrencyId = firstTransaction.CurrencyId,
-                TransactionType = firstTransaction.TransactionType,
-                TransactionDate = DateTime.Now
-            };
-
-            transaction.TransactionLabelsV2 = new List<TransactionLabelV2>();
-            transaction.TransactionLabelsV2 = firstTransaction.TransactionLabelsV2.Select(tl => new TransactionLabelV2
-            {
-                UserLabelId = tl.UserLabelId
-            }).ToList();
-
-            transaction.IsMatched = transaction.TransactionLabelsV2.Any();
-
-            var transactionCreatedDomainEvent = new TransactionCreatedDomainEvent(transaction);
-            transaction.AddEvent(transactionCreatedDomainEvent);
-            await transactionRepository.AddAsync(transaction);
-
-            recurringTransaction.NextOccurrence =
-                recurringTransactionIntervalsService.CalculateInterval(recurringTransaction.NextOccurrence.Value,
-                    recurringTransaction.Frequency, recurringTransaction.Interval);
+            if (processedOccurrenceCount == 0)
+                continue;
 
             recurringTransactionRepository.Update(recurringTransaction);
 
-            if (!processedItemsByUser.TryGetValue(recurringTransaction.UserId, out var list))
-            {
-                list = new List<(string Name, string Description, decimal Amount, int CurrencyId, TransactionTypes TransactionType)>();
-                processedItemsByUser[recurringTransaction.UserId] = list;
-            }
-            list.Add((recurringTransaction.Name, firstTransaction.Description ?? "", firstTransaction.Amount, firstTransaction.CurrencyId, firstTransaction.TransactionType));
-
-            // Az önce hesaplanan yeni NextOccurrence, EndDate'i geçtiyse bu tekrarlayan kayıt için
-            // bugün işlenen son occurrence'dı — kullanıcıya seri bitiş bildirimi gönderilecek.
-            if (HasSeriesEnded(recurringTransaction))
+            // Son hesaplanan NextOccurrence EndDate'i gectiyse bu kayit icin islenen son
+            // occurrence'di - kullaniciya seri bitis bildirimi gonderilecek.
+            if (firstTransaction is not null && HasSeriesEnded(recurringTransaction))
             {
                 if (!endedItemsByUser.TryGetValue(recurringTransaction.UserId, out var endedList))
                 {
@@ -155,9 +193,14 @@ public class RecurringTransactionJob : BackgroundService
 
     private static bool HasSeriesEnded(RecurringTransaction recurringTransaction)
     {
+        return recurringTransaction.NextOccurrence.HasValue &&
+               IsAfterEndDate(recurringTransaction, recurringTransaction.NextOccurrence.Value);
+    }
+
+    private static bool IsAfterEndDate(RecurringTransaction recurringTransaction, DateTime occurrenceDate)
+    {
         return recurringTransaction.EndDate.HasValue &&
-               recurringTransaction.NextOccurrence.HasValue &&
-               recurringTransaction.NextOccurrence.Value.Date > recurringTransaction.EndDate.Value.Date;
+               occurrenceDate.Date > recurringTransaction.EndDate.Value.Date;
     }
 
     private async Task SendRecurringProcessedNotificationEmailsAsync(
