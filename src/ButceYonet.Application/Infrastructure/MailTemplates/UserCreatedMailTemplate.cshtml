@@ -14,19 +14,17 @@
             <table width="650" cellpadding="0" cellspacing="0" align="center" style="background-color:#ffffff; border-radius:8px;">
                 <tr>
                     <td style="padding:30px; color:#333333; font-size:13px; line-height:1.7; letter-spacing:0.5px;">
-                        <p style="margin-top:0;">Merhaba <strong> @Model.UserName </strong></p>
-                        <p>
-                            <strong>Bütçe Yönet</strong> uygulamasına başarıyla kayıt oldunuz 🎉 Artık gelir ve giderlerinizi tek bir yerden takip edebilir, harcamalarınızı daha bilinçli şekilde yönetebilirsiniz.
-                        </p>
-                        <p> Bütçe Yönet ile: </p>
+                        <p style="margin-top:0;">@await Model.Text("Common.GreetingWithName", Model.UserName)</p>
+                        <p>@await Model.Text("UserCreated.Intro")</p>
+                        <p>@await Model.Text("UserCreated.FeaturesTitle")</p>
                         <ul style="padding-left:18px;">
-                            <li>Gelir ve giderlerinizi kategorilere ayırabilirsiniz</li>
-                            <li>Aylık harcama özetlerinizi görüntüleyebilirsiniz</li>
-                            <li>Bütçenizi kontrol altında tutabilirsiniz</li>
+                            <li>@await Model.Text("UserCreated.Feature1")</li>
+                            <li>@await Model.Text("UserCreated.Feature2")</li>
+                            <li>@await Model.Text("UserCreated.Feature3")</li>
                         </ul>
-                        <p> Eğer herhangi bir sorunuz olursa, bizimle dilediğiniz zaman iletişime geçebilirsiniz. </p>
-                        <p style="margin-bottom:0;"> Keyifli kullanımlar dileriz, <br>
-                            <strong>Bütçe Yönet Ekibi</strong>
+                        <p>@await Model.Text("UserCreated.Contact")</p>
+                        <p style="margin-bottom:0;">@await Model.Text("UserCreated.Closing")<br>
+                            <strong>@await Model.Text("Common.TeamSignature")</strong>
                         </p>
                     </td>
                 </tr>
@@ -36,7 +34,7 @@
                 <tr>
                     <td align="center" style="font-size:12px; color:#999999;">
                         <p style="margin-bottom:4px;"> © @Model.Year Bütçe Yönet </p>
-                        <p style="margin-bottom:0;"> Bu e-posta otomatik olarak gönderilmiştir. </p>
+                        <p style="margin-bottom:0;"> @await Model.Text("Common.AutoSentNotice") </p>
                     </td>
                 </tr>
             </table>

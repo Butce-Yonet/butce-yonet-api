@@ -30,7 +30,19 @@ public class UserEntityTypeConfiguration : EFCoreEntityTypeConfiguration<User>
             .Property(p => p.Email)
             .HasMaxLength(100)
             .IsRequired(false);
-        
+
+        // AuthGuard yönetir (PUT /active-language). "tr"/"en" gibi gelebilir;
+        // gönderim tarafında NotificationLanguage.Normalize ile "TR"/"EN"e çevrilir.
+        builder
+            .Property(p => p.ActiveLanguage)
+            .HasMaxLength(20)
+            .IsRequired(false);
+
+        // AuthGuard yönetir (hesap dondurma / aktivasyon). Pasif kullanıcılara toplu bildirim gönderilmez.
+        builder
+            .Property(p => p.IsPassive)
+            .IsRequired();
+
         builder.ToTable("Users");
     }
 }

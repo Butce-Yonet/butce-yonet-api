@@ -3,13 +3,8 @@ using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Infrastructure.Data;
 using ButceYonet.Application.Infrastructure.MailTemplates;
-using DotBoil;
-using DotBoil.Configuration;
-using DotBoil.Email;
-using DotBoil.Email.Configuration;
-using DotBoil.Email.Models;
+using ButceYonet.Application.Infrastructure.Notifications;
 using DotBoil.EFCore;
-using DotBoil.TemplateEngine;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -56,10 +51,10 @@ public class SubscriptionReminderJob : BackgroundService
     {
         using var scope = _serviceProvider.CreateAsyncScope();
         var subscriptionRepository = scope.ServiceProvider.GetService<IRepository<Subscription, ButceYonetDbContext>>();
-        var userRepository = scope.ServiceProvider.GetService<IRepository<User, ButceYonetAuthorizationDbContext>>();
         var currencyRepository = scope.ServiceProvider.GetService<IRepository<Currency, ButceYonetDbContext>>();
-        var razorRenderer = scope.ServiceProvider.GetService<IRazorRenderer>();
-        var mailSender = scope.ServiceProvider.GetService<IMailSender>();
+        var recipientProvider = scope.ServiceProvider.GetRequiredService<INotificationRecipientProvider>();
+        var mailSender = scope.ServiceProvider.GetRequiredService<IMailNotificationSender>();
+        var pushSender = scope.ServiceProvider.GetRequiredService<IPushNotificationSender>();
 
         var today = DateTime.UtcNow.Date;
         var upcomingWindowEnd = today.AddDays(SubscriptionStatusCalculator.UpcomingWindowDays);
@@ -91,15 +86,11 @@ public class SubscriptionReminderJob : BackgroundService
         if (userIds.Count == 0)
             return;
 
-        var serverSettings = DotBoilApp.Configuration.GetConfigurations<EmailOptions>();
-        var serverSetting = serverSettings.ServerSettings.FirstOrDefault();
+        var recipients = await recipientProvider.GetManyAsync(userIds, cancellationToken);
 
         foreach (var userId in userIds)
         {
-            var user = await userRepository.Get()
-                .Where(u => u.Id == userId)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (user is null || string.IsNullOrWhiteSpace(user.Email))
+            if (!recipients.TryGetValue(userId, out var recipient))
                 continue;
 
             var overdueItems = overdueByUser.TryGetValue(userId, out var overdueList)
@@ -112,27 +103,31 @@ public class SubscriptionReminderJob : BackgroundService
 
             var model = new SubscriptionReminderTemplateModel
             {
-                UserName = string.IsNullOrWhiteSpace(user.Name) ? user.Email : $"{user.Name} {user.Surname}".Trim(),
+                UserName = recipient.DisplayName,
                 OverdueItems = overdueItems,
-                UpcomingItems = upcomingItems,
-                Year = DateTime.UtcNow.Year
+                UpcomingItems = upcomingItems
             };
 
             try
             {
-                var mailContent = await razorRenderer.RenderAsync("SubscriptionReminderTemplate", model);
-                await mailSender.SendAsync(serverSetting.Value, new Message
-                {
-                    From = new List<string> { serverSetting.Value.EmailAddress },
-                    To = new List<string> { user.Email },
-                    Attachments = new List<Attachment>(),
-                    Body = mailContent,
-                    Subject = "Bütçe Yönet - Abonelik hatırlatması"
-                });
+                await mailSender.SendAsync(recipient, "SubscriptionReminderTemplate", "SubscriptionReminder.Subject", model,
+                    cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Subscription reminder mail could not be sent for user {UserId}.", userId);
+            }
+
+            try
+            {
+                await pushSender.SendAsync(recipient, "SubscriptionReminder.Title", "SubscriptionReminder.Body",
+                    new object[] { overdueItems.Count, upcomingItems.Count },
+                    new Dictionary<string, string> { ["type"] = "SubscriptionReminder" },
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Subscription reminder push could not be sent for user {UserId}.", userId);
             }
         }
     }

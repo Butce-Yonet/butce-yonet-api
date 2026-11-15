@@ -3,17 +3,12 @@ using ButceYonet.Application.Domain.Entities;
 using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Infrastructure.Data;
 using ButceYonet.Application.Infrastructure.MailTemplates;
-using DotBoil;
+using ButceYonet.Application.Infrastructure.Notifications;
 using DotBoil.AuthGuard.Application.Domain.DomainEvents;
 using DotBoil.Caching;
-using DotBoil.Configuration;
 using DotBoil.EFCore;
-using DotBoil.Email;
-using DotBoil.Email.Configuration;
-using DotBoil.Email.Models;
 using DotBoil.MassTransit.Attributes;
 using DotBoil.MassTransit.Consumers;
-using DotBoil.TemplateEngine;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,8 +23,8 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
     private IRepository<DefaultLabel, ButceYonetDbContext> _defaultLabelRepository;
     private IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
     private ICache _cache;
-    private IRazorRenderer _razorRenderer;
-    private IMailSender _mailSender;
+    private INotificationRecipientProvider _recipientProvider;
+    private IMailNotificationSender _mailSender;
     
     private readonly IServiceProvider _serviceProvider;
     
@@ -56,8 +51,8 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
         _defaultLabelRepository = scope.ServiceProvider.GetRequiredService<IRepository<DefaultLabel, ButceYonetDbContext>>();
         _userLabelRepository = scope.ServiceProvider.GetRequiredService<IRepository<UserLabel, ButceYonetDbContext>>();
         _cache = scope.ServiceProvider.GetRequiredService<ICache>();
-        _razorRenderer = scope.ServiceProvider.GetRequiredService<IRazorRenderer>();
-        _mailSender = scope.ServiceProvider.GetRequiredService<IMailSender>();
+        _recipientProvider = scope.ServiceProvider.GetRequiredService<INotificationRecipientProvider>();
+        _mailSender = scope.ServiceProvider.GetRequiredService<IMailNotificationSender>();
     }
 
     private async Task InitializeUserPlan(UserCreatedDomainEvent @event)
@@ -117,25 +112,16 @@ public class UserCreatedDomainEventConsumer : BaseConsumer<UserCreatedDomainEven
 
     private async Task SendWelcomeMail(UserCreatedDomainEvent @event)
     {
+        var recipient = await _recipientProvider.GetByEmailAsync(@event.Email)
+                        ?? new NotificationRecipient { Email = @event.Email };
+
         var userCreatedMailTemplateModel = new UserCreatedMailTemplateModel
         {
-            UserName = string.Format("{0} {1}", @event.Name, @event.Surname),
-            Year = DateTime.Now.Year
+            UserName = string.Format("{0} {1}", @event.Name, @event.Surname)
         };
 
-        var mailContent = await _razorRenderer.RenderAsync("UserCreatedMailTemplate", userCreatedMailTemplateModel);
-        var mailConfiguration = DotBoilApp.Configuration.GetConfigurations<EmailOptions>();
-        var serverSettings = mailConfiguration.ServerSettings;
-        var serverSetting = serverSettings.FirstOrDefault();
-        
-        await _mailSender.SendAsync(serverSetting.Value, new Message()
-        {
-            From = new List<string>() { serverSetting.Value.EmailAddress },
-            To = new List<string>() { @event.Email },
-            Attachments = new List<Attachment>(),
-            Body = mailContent,
-            Subject = "Bütçe Yönet"
-        });
-
+        // Hoş geldin maili işlemsel: kayıt anında tercih satırı henüz olamayacağı için Email tercihine bakılmaz.
+        await _mailSender.SendAsync(recipient, "UserCreatedMailTemplate", "UserCreated.Subject", userCreatedMailTemplateModel,
+            ignorePreferences: true);
     }
 }

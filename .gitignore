@@ -423,3 +423,6 @@ src/ButceYonet.Api/appsettings.json
 src/ButceYonet.Consumers/appsettings.Development.json
 src/ButceYonet.Consumers/appsettings.json
 src/ButceYonet.Auth/appsettings.json
+
+# Publish output
+/publish/

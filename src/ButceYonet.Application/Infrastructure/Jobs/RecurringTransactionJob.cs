@@ -5,14 +5,9 @@ using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Domain.Events;
 using ButceYonet.Application.Infrastructure.Data;
 using ButceYonet.Application.Infrastructure.MailTemplates;
+using ButceYonet.Application.Infrastructure.Notifications;
 using ButceYonet.Application.Infrastructure.Services;
-using DotBoil;
-using DotBoil.Configuration;
-using DotBoil.Email;
-using DotBoil.Email.Configuration;
-using DotBoil.Email.Models;
 using DotBoil.EFCore;
-using DotBoil.TemplateEngine;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -212,38 +207,29 @@ public class RecurringTransactionJob : BackgroundService
         if (processedItemsByUser.Count == 0)
             return;
 
-        var userRepository = serviceProvider.GetService<IRepository<User, ButceYonetAuthorizationDbContext>>();
         var currencyRepository = serviceProvider.GetService<IRepository<Currency, ButceYonetDbContext>>();
-        var razorRenderer = serviceProvider.GetService<IRazorRenderer>();
-        var mailSender = serviceProvider.GetService<IMailSender>();
+        var recipientProvider = serviceProvider.GetRequiredService<INotificationRecipientProvider>();
+        var mailSender = serviceProvider.GetRequiredService<IMailNotificationSender>();
+        var pushSender = serviceProvider.GetRequiredService<IPushNotificationSender>();
 
         var currencyMap = await currencyRepository.GetAll()
             .ToDictionaryAsync(c => c.Id, cancellationToken);
 
-        var serverSettings = DotBoilApp.Configuration.GetConfigurations<EmailOptions>();
-        var serverSetting = serverSettings.ServerSettings.FirstOrDefault();
+        var recipients = await recipientProvider.GetManyAsync(processedItemsByUser.Keys, cancellationToken);
 
         foreach (var (userId, items) in processedItemsByUser)
         {
-            if (items.Count == 0)
-                continue;
-
-            var user = await userRepository.Get()
-                .Where(u => u.Id == userId)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (user is null || string.IsNullOrWhiteSpace(user.Email))
+            if (items.Count == 0 || !recipients.TryGetValue(userId, out var recipient))
                 continue;
 
             var templateItems = items.Select(i =>
             {
                 var currency = currencyMap.GetValueOrDefault(i.CurrencyId);
-                var isIncome = i.TransactionType == TransactionTypes.Income;
                 return new ProcessedRecurringItem
                 {
                     Name = i.Name,
                     Description = i.Description,
-                    TransactionTypeDisplay = isIncome ? "Gelir" : "Gider",
-                    IsIncome = isIncome,
+                    IsIncome = i.TransactionType == TransactionTypes.Income,
                     Amount = i.Amount,
                     CurrencySymbol = currency?.Symbol ?? "",
                     IsSymbolRight = currency?.IsSymbolRight ?? true
@@ -252,27 +238,32 @@ public class RecurringTransactionJob : BackgroundService
 
             var model = new RecurringTransactionsProcessedTemplateModel
             {
-                UserName = string.IsNullOrWhiteSpace(user.Name) ? user.Email : $"{user.Name} {user.Surname}".Trim(),
+                UserName = recipient.DisplayName,
                 ProcessedDate = processedDate,
-                Items = templateItems,
-                Year = DateTime.UtcNow.Year
+                Items = templateItems
             };
 
             try
             {
-                var mailContent = await razorRenderer.RenderAsync("RecurringTransactionsProcessedTemplate", model);
-                await mailSender.SendAsync(serverSetting.Value, new Message
-                {
-                    From = new List<string> { serverSetting.Value.EmailAddress },
-                    To = new List<string> { user.Email },
-                    Attachments = new List<Attachment>(),
-                    Body = mailContent,
-                    Subject = "Bütçe Yönet - Tekrarlayan gelir-gider işlendi"
-                });
+                await mailSender.SendAsync(recipient, "RecurringTransactionsProcessedTemplate",
+                    "RecurringTransactionsProcessed.Subject", model, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
-                // Mail gönderimi hata verse bile job tamamlansın; loglama host'ta yapılabilir
+                // Mail gönderimi hata verse bile job tamamlansın
+                _logger.LogError(ex, "Recurring processed mail could not be sent for user {UserId}.", userId);
+            }
+
+            try
+            {
+                await pushSender.SendAsync(recipient, "RecurringTransactionsProcessed.Title", "RecurringTransactionsProcessed.Body",
+                    new object[] { items.Count },
+                    new Dictionary<string, string> { ["type"] = "RecurringTransactionsProcessed" },
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Recurring processed push could not be sent for user {UserId}.", userId);
             }
         }
     }
@@ -286,26 +277,19 @@ public class RecurringTransactionJob : BackgroundService
         if (endedItemsByUser.Count == 0)
             return;
 
-        var userRepository = serviceProvider.GetService<IRepository<User, ButceYonetAuthorizationDbContext>>();
         var currencyRepository = serviceProvider.GetService<IRepository<Currency, ButceYonetDbContext>>();
-        var razorRenderer = serviceProvider.GetService<IRazorRenderer>();
-        var mailSender = serviceProvider.GetService<IMailSender>();
+        var recipientProvider = serviceProvider.GetRequiredService<INotificationRecipientProvider>();
+        var mailSender = serviceProvider.GetRequiredService<IMailNotificationSender>();
+        var pushSender = serviceProvider.GetRequiredService<IPushNotificationSender>();
 
         var currencyMap = await currencyRepository.GetAll()
             .ToDictionaryAsync(c => c.Id, cancellationToken);
 
-        var serverSettings = DotBoilApp.Configuration.GetConfigurations<EmailOptions>();
-        var serverSetting = serverSettings.ServerSettings.FirstOrDefault();
+        var recipients = await recipientProvider.GetManyAsync(endedItemsByUser.Keys, cancellationToken);
 
         foreach (var (userId, items) in endedItemsByUser)
         {
-            if (items.Count == 0)
-                continue;
-
-            var user = await userRepository.Get()
-                .Where(u => u.Id == userId)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (user is null || string.IsNullOrWhiteSpace(user.Email))
+            if (items.Count == 0 || !recipients.TryGetValue(userId, out var recipient))
                 continue;
 
             var endedIncomes = items
@@ -320,28 +304,33 @@ public class RecurringTransactionJob : BackgroundService
 
             var model = new RecurringTransactionEndedTemplateModel
             {
-                UserName = string.IsNullOrWhiteSpace(user.Name) ? user.Email : $"{user.Name} {user.Surname}".Trim(),
+                UserName = recipient.DisplayName,
                 EndedDate = endedDate,
                 EndedIncomes = endedIncomes,
-                EndedExpenses = endedExpenses,
-                Year = DateTime.UtcNow.Year
+                EndedExpenses = endedExpenses
             };
 
             try
             {
-                var mailContent = await razorRenderer.RenderAsync("RecurringTransactionEndedTemplate", model);
-                await mailSender.SendAsync(serverSetting.Value, new Message
-                {
-                    From = new List<string> { serverSetting.Value.EmailAddress },
-                    To = new List<string> { user.Email },
-                    Attachments = new List<Attachment>(),
-                    Body = mailContent,
-                    Subject = "Bütçe Yönet - Tekrarlayan bir kaydınız sona erdi"
-                });
+                await mailSender.SendAsync(recipient, "RecurringTransactionEndedTemplate",
+                    "RecurringTransactionEnded.Subject", model, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
-                // Mail gönderimi hata verse bile job tamamlansın; loglama host'ta yapılabilir
+                // Mail gönderimi hata verse bile job tamamlansın
+                _logger.LogError(ex, "Recurring ended mail could not be sent for user {UserId}.", userId);
+            }
+
+            try
+            {
+                await pushSender.SendAsync(recipient, "RecurringTransactionEnded.Title", "RecurringTransactionEnded.Body",
+                    new object[] { items.Count },
+                    new Dictionary<string, string> { ["type"] = "RecurringTransactionEnded" },
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Recurring ended push could not be sent for user {UserId}.", userId);
             }
         }
     }

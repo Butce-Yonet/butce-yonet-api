@@ -9,6 +9,7 @@ namespace ButceYonet.Application.Infrastructure.Data;
 public class ButceYonetAuthorizationDbContext : EFCoreDbContext
 {
     public DbSet<User> Users { get; set; }
+    public DbSet<UserNotificationPreference> UserNotificationPreferences { get; set; }
     
     public ButceYonetAuthorizationDbContext(IServiceProvider serviceProvider) : base(serviceProvider)
     {

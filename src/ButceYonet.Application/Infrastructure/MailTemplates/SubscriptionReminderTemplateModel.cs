@@ -1,11 +1,10 @@
 namespace ButceYonet.Application.Infrastructure.MailTemplates;
 
-public class SubscriptionReminderTemplateModel
+public class SubscriptionReminderTemplateModel : LocalizedMailTemplateModel
 {
     public string UserName { get; set; }
     public List<SubscriptionReminderItem> OverdueItems { get; set; } = new();
     public List<SubscriptionReminderItem> UpcomingItems { get; set; } = new();
-    public int Year { get; set; }
 }
 
 public class SubscriptionReminderItem

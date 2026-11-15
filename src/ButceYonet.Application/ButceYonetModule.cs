@@ -6,6 +6,7 @@ using ButceYonet.Application.Domain.Enums;
 using ButceYonet.Application.Infrastructure;
 using ButceYonet.Application.Infrastructure.Configuration;
 using ButceYonet.Application.Infrastructure.Jobs;
+using ButceYonet.Application.Infrastructure.Notifications;
 using ButceYonet.Application.Infrastructure.Services;
 using DotBoil;
 using DotBoil.Configuration;
@@ -41,11 +42,17 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<INotebookPeriodResolver, NotebookPeriodResolver>();
         DotBoilApp.Services.AddScoped<ITransactionReportSyncService, TransactionReportSyncService>();
 
+        DotBoilApp.Services.AddSingleton<INotificationLocalizer, NotificationLocalizer>();
+        DotBoilApp.Services.AddScoped<INotificationRecipientProvider, NotificationRecipientProvider>();
+        DotBoilApp.Services.AddScoped<IMailNotificationSender, MailNotificationSender>();
+        DotBoilApp.Services.AddScoped<IPushNotificationSender, PushNotificationSender>();
+
         RegisterHostedServiceIfEnabled<RecurringTransactionJob>(configuration);
         RegisterHostedServiceIfEnabled<SubscriptionReminderJob>(configuration);
         RegisterHostedServiceIfEnabled<RecalculateNonCategorizedTransactionReport>(configuration);
         RegisterHostedServiceIfEnabled<RecalculateCategorizedTransactionReport>(configuration);
         RegisterHostedServiceIfEnabled<EngagementSignalJob>(configuration);
+        RegisterHostedServiceIfEnabled<EngagementSignalDispatchJob>(configuration);
         #region User Plan Rule Validators
 
         DotBoilApp.Services.AddKeyedScoped<IUserPlanRuleValidator, NotebookTransactionCount>(PlanFeatures.NotebookTransactionCount
