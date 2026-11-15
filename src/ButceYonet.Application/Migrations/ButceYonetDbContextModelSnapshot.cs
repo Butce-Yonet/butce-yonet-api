@@ -16,8 +16,60 @@ namespace ButceYonet.Application.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.6")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.Budget", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ModifyUser")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("PeriodStartDay")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserLabelId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("UserLabelId");
+
+                    b.HasIndex("UserId", "CurrencyId", "UserLabelId");
+
+                    b.ToTable("Budgets", (string)null);
+                });
 
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.CategorizedTransactionReportV2", b =>
                 {
@@ -167,6 +219,9 @@ namespace ButceYonet.Application.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    b.Property<int?>("BudgetId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreateTime")
                         .HasColumnType("datetime(6)");
 
@@ -223,6 +278,8 @@ namespace ButceYonet.Application.Migrations
                     b.HasIndex("UserId");
 
                     b.HasIndex("IsSent", "OccurredAt");
+
+                    b.HasIndex("BudgetId", "Type", "OccurredAt");
 
                     b.ToTable("EngagementSignals", (string)null);
                 });
@@ -861,6 +918,24 @@ namespace ButceYonet.Application.Migrations
                     b.ToTable("UserPlans", (string)null);
                 });
 
+            modelBuilder.Entity("ButceYonet.Application.Domain.Entities.Budget", b =>
+                {
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ButceYonet.Application.Domain.Entities.UserLabel", "UserLabel")
+                        .WithMany()
+                        .HasForeignKey("UserLabelId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Currency");
+
+                    b.Navigation("UserLabel");
+                });
+
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.CategorizedTransactionReportV2", b =>
                 {
                     b.HasOne("ButceYonet.Application.Domain.Entities.Currency", "Currency")
@@ -890,6 +965,11 @@ namespace ButceYonet.Application.Migrations
 
             modelBuilder.Entity("ButceYonet.Application.Domain.Entities.EngagementSignal", b =>
                 {
+                    b.HasOne("ButceYonet.Application.Domain.Entities.Budget", "Budget")
+                        .WithMany()
+                        .HasForeignKey("BudgetId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("ButceYonet.Application.Domain.Entities.Goal", "Goal")
                         .WithMany()
                         .HasForeignKey("GoalId")
@@ -899,6 +979,8 @@ namespace ButceYonet.Application.Migrations
                         .WithMany()
                         .HasForeignKey("TransactionId")
                         .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Budget");
 
                     b.Navigation("Goal");
 

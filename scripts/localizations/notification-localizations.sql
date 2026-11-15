@@ -164,6 +164,30 @@ INSERT INTO `Localizations` (`Language`, `Group`, `Key`, `Value`) VALUES
 ('TR', 'ButceYonet.Notification', 'EngagementSignal.AnomalousSpending.Title', 'Olağan dışı harcama'),
 ('EN', 'ButceYonet.Notification', 'EngagementSignal.AnomalousSpending.Title', 'Unusual spending'),
 ('TR', 'ButceYonet.Notification', 'EngagementSignal.AnomalousSpending.Body', '"{0}" ({1}) bu kategorideki ortalama harcamanın {2} katı.'),
-('EN', 'ButceYonet.Notification', 'EngagementSignal.AnomalousSpending.Body', '"{0}" ({1}) is {2}x your average spending in this category.');
+('EN', 'ButceYonet.Notification', 'EngagementSignal.AnomalousSpending.Body', '"{0}" ({1}) is {2}x your average spending in this category.'),
+
+-- BudgetThresholdReached: {0} = etiket adı, {1} = eşik yüzdesi (80), {2} = harcanan, {3} = limit
+('TR', 'ButceYonet.Notification', 'EngagementSignal.BudgetThresholdReached.Title', 'Bütçe uyarısı: {0}'),
+('EN', 'ButceYonet.Notification', 'EngagementSignal.BudgetThresholdReached.Title', 'Budget alert: {0}'),
+('TR', 'ButceYonet.Notification', 'EngagementSignal.BudgetThresholdReached.Body', '"{0}" bütçende {3} limitin {2} kadarını harcadın (%{1}).'),
+('EN', 'ButceYonet.Notification', 'EngagementSignal.BudgetThresholdReached.Body', 'You have spent {2} of your {3} "{0}" budget ({1}%).'),
+
+-- BudgetThresholdReachedGeneral: genel (etiketsiz) bütçe; {0} kullanılmaz
+('TR', 'ButceYonet.Notification', 'EngagementSignal.BudgetThresholdReachedGeneral.Title', 'Bütçe uyarısı'),
+('EN', 'ButceYonet.Notification', 'EngagementSignal.BudgetThresholdReachedGeneral.Title', 'Budget alert'),
+('TR', 'ButceYonet.Notification', 'EngagementSignal.BudgetThresholdReachedGeneral.Body', 'Aylık bütçende {3} limitin {2} kadarını harcadın (%{1}).'),
+('EN', 'ButceYonet.Notification', 'EngagementSignal.BudgetThresholdReachedGeneral.Body', 'You have spent {2} of your {3} monthly budget ({1}%).'),
+
+-- BudgetExceeded: {0} = etiket adı, {1} = 100, {2} = harcanan, {3} = limit
+('TR', 'ButceYonet.Notification', 'EngagementSignal.BudgetExceeded.Title', 'Bütçe limiti doldu: {0}'),
+('EN', 'ButceYonet.Notification', 'EngagementSignal.BudgetExceeded.Title', 'Budget limit reached: {0}'),
+('TR', 'ButceYonet.Notification', 'EngagementSignal.BudgetExceeded.Body', '"{0}" bütçende {3} limitine ulaştın. Bu dönemki harcaman: {2}.'),
+('EN', 'ButceYonet.Notification', 'EngagementSignal.BudgetExceeded.Body', 'You have reached your {3} "{0}" budget. Spent this period: {2}.'),
+
+-- BudgetExceededGeneral: genel (etiketsiz) bütçe; {0} kullanılmaz
+('TR', 'ButceYonet.Notification', 'EngagementSignal.BudgetExceededGeneral.Title', 'Bütçe limiti doldu'),
+('EN', 'ButceYonet.Notification', 'EngagementSignal.BudgetExceededGeneral.Title', 'Budget limit reached'),
+('TR', 'ButceYonet.Notification', 'EngagementSignal.BudgetExceededGeneral.Body', 'Aylık bütçende {3} limitine ulaştın. Bu dönemki harcaman: {2}.'),
+('EN', 'ButceYonet.Notification', 'EngagementSignal.BudgetExceededGeneral.Body', 'You have reached your {3} monthly budget. Spent this period: {2}.');
 
 COMMIT;

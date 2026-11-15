@@ -64,6 +64,11 @@ public class TransactionCreatedDomainEventConsumer : BaseConsumer<TransactionCre
         transaction.IsProceed = true;
         transactionRepository.Update(transaction);
         await transactionRepository.SaveChangesAsync();
+
+        // IsProceed kaydedildikten sonra: bütçe değerlendirmesi hata verse bile (içeride loglanıyor)
+        // mesaj retry'a düşüp raporları ikinci kez senkronlamamalı.
+        var budgetSignalService = scope.ServiceProvider.GetRequiredService<IBudgetSignalService>();
+        await budgetSignalService.EvaluateAsync(transaction);
     }
 
     private async Task TryCreateGoalSignalsAsync(TransactionV2 transaction)

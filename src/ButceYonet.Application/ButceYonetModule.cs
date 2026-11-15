@@ -41,6 +41,8 @@ public class ButceYonetModule : Module
         DotBoilApp.Services.AddScoped<IRecurringTransactionIntervalsService, RecurringTransactionIntervalsService>();
         DotBoilApp.Services.AddScoped<INotebookPeriodResolver, NotebookPeriodResolver>();
         DotBoilApp.Services.AddScoped<ITransactionReportSyncService, TransactionReportSyncService>();
+        DotBoilApp.Services.AddScoped<IBudgetSpendingCalculator, BudgetSpendingCalculator>();
+        DotBoilApp.Services.AddScoped<IBudgetSignalService, BudgetSignalService>();
 
         DotBoilApp.Services.AddSingleton<INotificationLocalizer, NotificationLocalizer>();
         DotBoilApp.Services.AddScoped<INotificationRecipientProvider, NotificationRecipientProvider>();

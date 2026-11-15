@@ -17,6 +17,7 @@ namespace ButceYonet.Application.Application.Features.UserLabels.DeleteUserLabel
 public class DeleteUserLabelCommandHandler : BaseHandler<DeleteUserLabelCommand, BaseResponse>
 {
     private readonly IRepository<UserLabel, ButceYonetDbContext> _userLabelRepository;
+    private readonly IRepository<Budget, ButceYonetDbContext> _budgetRepository;
 
     public DeleteUserLabelCommandHandler(
         ICache cache,
@@ -25,10 +26,12 @@ public class DeleteUserLabelCommandHandler : BaseHandler<DeleteUserLabelCommand,
         ILocalize localize,
         IParameterManager parameter,
         IUserPlanValidator userPlanValidator,
-        IRepository<UserLabel, ButceYonetDbContext> userLabelRepository)
+        IRepository<UserLabel, ButceYonetDbContext> userLabelRepository,
+        IRepository<Budget, ButceYonetDbContext> budgetRepository)
         : base(cache, user, mapper, localize, parameter, userPlanValidator)
     {
         _userLabelRepository = userLabelRepository;
+        _budgetRepository = budgetRepository;
     }
 
     public override async Task<BaseResponse> ExecuteRequest(DeleteUserLabelCommand request, CancellationToken cancellationToken)
@@ -43,6 +46,19 @@ public class DeleteUserLabelCommandHandler : BaseHandler<DeleteUserLabelCommand,
 
         label.IsDeleted = true;
         _userLabelRepository.Update(label);
+
+        // Silinen etikete bağlı bütçeler artık harcama toplayamaz; yetim kalmasınlar.
+        var budgets = await _budgetRepository
+            .Get()
+            .Where(b => b.UserId == _user.Id && b.UserLabelId == label.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var budget in budgets)
+        {
+            budget.IsDeleted = true;
+            _budgetRepository.Update(budget);
+        }
+
         await _userLabelRepository.SaveChangesAsync();
 
         var cacheKey = CacheKeyConstants.UserLabels.Replace("{UserId}", _user.Id.ToString());

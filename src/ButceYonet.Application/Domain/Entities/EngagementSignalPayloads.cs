@@ -36,3 +36,14 @@ public class AnomalousSpendingSignalPayload
     public int CurrencyId { get; set; }
     public int CategoryLabelId { get; set; }
 }
+
+public class BudgetSignalPayload
+{
+    /// <summary>Genel (etiketsiz) bütçede null</summary>
+    public string LabelName { get; set; }
+    public int Percentage { get; set; }
+    public decimal BudgetAmount { get; set; }
+    public decimal SpentAmount { get; set; }
+    public int CurrencyId { get; set; }
+    public DateTime PeriodStart { get; set; }
+}

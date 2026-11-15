@@ -4,18 +4,21 @@ using ButceYonet.Application.Domain.Events;
 using DotBoil.MassTransit.Attributes;
 using DotBoil.MassTransit.Consumers;
 using MassTransit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ButceYonet.Consumers;
 
 [Consumer("transaction-updated")]
 public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpdatedDomainEvent>
 {
+    private readonly IServiceProvider _serviceProvider;
     private readonly ITransactionReportSyncService _reportSyncService;
 
     public TransactionUpdatedDomainEventConsumer(
         IServiceProvider serviceProvider,
         ITransactionReportSyncService reportSyncService) : base(serviceProvider)
     {
+        _serviceProvider = serviceProvider;
         _reportSyncService = reportSyncService;
     }
 
@@ -37,6 +40,11 @@ public class TransactionUpdatedDomainEventConsumer : BaseConsumer<TransactionUpd
         await Task.WhenAll(
             ProcessNonCategorizedAsync(oldTransaction, newTransaction),
             ProcessCategorizedAsync(oldTransaction, newTransaction));
+
+        // Tutar artışı ya da etiket/tarih değişikliği bir bütçe eşiğini geçirebilir.
+        using var scope = _serviceProvider.CreateScope();
+        var budgetSignalService = scope.ServiceProvider.GetRequiredService<IBudgetSignalService>();
+        await budgetSignalService.EvaluateAsync(newTransaction, oldTransaction);
     }
 
     private async Task ProcessNonCategorizedAsync(TransactionV2 oldTransaction, TransactionV2 newTransaction)
