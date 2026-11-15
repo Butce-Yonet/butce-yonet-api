@@ -7,5 +7,7 @@ public enum EngagementSignalType
     GoalDeadlineApproaching = 3,
     StreakMilestone = 4,
     InactivityWarning = 5,
-    AnomalousSpending = 6
+    AnomalousSpending = 6,
+    BudgetThresholdReached = 7,
+    BudgetExceeded = 8
 }

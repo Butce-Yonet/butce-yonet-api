@@ -9,6 +9,7 @@ public class EngagementSignal : BaseEntity
     public EngagementSignalType Type { get; set; }
     public int? GoalId { get; set; }
     public int? TransactionId { get; set; }
+    public int? BudgetId { get; set; }
     public DateTime OccurredAt { get; set; }
     public string PayloadJson { get; set; }
     public bool IsSent { get; set; }
@@ -16,4 +17,5 @@ public class EngagementSignal : BaseEntity
 
     public virtual Goal Goal { get; set; }
     public virtual TransactionV2 Transaction { get; set; }
+    public virtual Budget Budget { get; set; }
 }

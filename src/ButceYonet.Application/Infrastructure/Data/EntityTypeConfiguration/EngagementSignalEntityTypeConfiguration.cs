@@ -45,6 +45,16 @@ public class EngagementSignalEntityTypeConfiguration : EFCoreEntityTypeConfigura
             .OnDelete(DeleteBehavior.NoAction);
 
         builder
+            .HasOne(p => p.Budget)
+            .WithMany()
+            .HasForeignKey(p => p.BudgetId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // Bütçe sinyallerinin "bu dönem bu eşik için zaten üretildi mi" kontrolünü destekler.
+        builder
+            .HasIndex(p => new { p.BudgetId, p.Type, p.OccurredAt });
+
+        builder
             .HasIndex(p => p.UserId);
 
         builder

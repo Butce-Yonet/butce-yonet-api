@@ -93,7 +93,7 @@ public class EngagementSignalDispatchJob : BackgroundService
             try
             {
                 var args = BuildArgs(signal, recipient.Culture, currencyMap);
-                var key = $"EngagementSignal.{signal.Type}";
+                var key = BuildKey(signal);
 
                await pushSender.SendAsync(
                     recipient,
@@ -170,9 +170,35 @@ public class EngagementSignalDispatchJob : BackgroundService
                     payload.Ratio.ToString("0.#", culture)
                 };
             }
+            case EngagementSignalType.BudgetThresholdReached:
+            case EngagementSignalType.BudgetExceeded:
+            {
+                // Genel bütçe metinlerinde {0} kullanılmaz (bkz. BuildKey), sıra korunsun diye boş geçilir.
+                var payload = Deserialize<BudgetSignalPayload>(signal);
+                return new object[]
+                {
+                    payload.LabelName ?? string.Empty,
+                    payload.Percentage,
+                    FormatAmount(payload.SpentAmount, payload.CurrencyId, culture, currencyMap),
+                    FormatAmount(payload.BudgetAmount, payload.CurrencyId, culture, currencyMap)
+                };
+            }
             default:
                 return Array.Empty<object>();
         }
+    }
+
+    // Localizations'taki anahtar öneki. Genel (etiketsiz) bütçe sinyalleri etiket adı içermeyen
+    // ayrı metinlere ("...General") gider.
+    private static string BuildKey(EngagementSignal signal)
+    {
+        var key = $"EngagementSignal.{signal.Type}";
+
+        if (signal.Type is EngagementSignalType.BudgetThresholdReached or EngagementSignalType.BudgetExceeded &&
+            Deserialize<BudgetSignalPayload>(signal).LabelName is null)
+            return $"{key}General";
+
+        return key;
     }
 
     // Mobil uygulamanın bildirime tıklanınca ilgili ekrana gidebilmesi için.
@@ -189,6 +215,9 @@ public class EngagementSignalDispatchJob : BackgroundService
 
         if (signal.TransactionId.HasValue)
             data["transactionId"] = signal.TransactionId.Value.ToString();
+
+        if (signal.BudgetId.HasValue)
+            data["budgetId"] = signal.BudgetId.Value.ToString();
 
         return data;
     }
